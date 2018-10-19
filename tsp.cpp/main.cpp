@@ -31,7 +31,7 @@ bool compareByCost(const tInsercao &data1, const tInsercao &data2);
 
 //GILS-RVND
 void construtivo(int solucaoInicial[]);
-void buscaLocal(int solucaoInicial[]);
+void rvnd(int solucaoInicial[]);
 
 int main(int argc, char** argv) {
     readData(argc, argv, &dimension, &matrizAdj);
@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     }
 
     construtivo(solucaoInicial);
-    buscaLocal(solucaoInicial);
+    rvnd(solucaoInicial);
 
     printSolucao(solucaoInicial, dimension);
     custoSolucao(&custoTotal, solucaoInicial, dimension);
@@ -148,7 +148,7 @@ void construtivo(int solucaoInicial[]){
   }
 
 }
-void buscaLocal(int solucaoInicial[]){
+void rvnd(int solucaoInicial[]){
   // Inicia variáveis
   vector<int> solucao;
   vector<tInsercao> vizinhanca;
