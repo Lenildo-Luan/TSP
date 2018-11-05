@@ -52,7 +52,7 @@ int main(int argc, char** argv){
     deposito = 1;
 
     construtivo(solucao, coleta, deposito);
-    //reinsertion(solucao);
+    reinsertion(solucao);
 
     printSolucao(solucao, dimension);
     custoSolucao(&custoTotal, solucao, dimension);
@@ -99,17 +99,6 @@ void construtivo(vector<int> &solucao, int coleta, int deposito){
   // Adiciona deposito ao vector
   solucao.push_back(deposito);
 
-  for (size_t i = 0; i < solucao.size(); i++){
-    cout << solucao[i] << " ";
-  }
-
-  cout << endl;
-
-  for (size_t i = 0; i < verticesList.size(); i++){
-    cout << verticesList[i] << " ";
-  }
-  cout << endl;
-
   // Gera solução
   while(1) {
     tamanhoSolucao = solucao.size();
@@ -136,7 +125,7 @@ void construtivo(vector<int> &solucao, int coleta, int deposito){
     uniform_int_distribution<int> linear_i_alpha(0, int((bestVerticesList.size()-1)*alpha));
     rBest = linear_i_alpha(mt);
     solucao.emplace(solucao.begin() + bestVerticesList[rBest].pos, bestVerticesList[rBest].vertice);
-    cout << bestVerticesList[rBest].pos << " " << bestVerticesList[rBest].vertice << endl;
+    
     // Reseta Vectors
     for (size_t i = 0; i < verticesRestantes; i++) {
       if(bestVerticesList[rBest].vertice == verticesList[i]) {
@@ -146,24 +135,17 @@ void construtivo(vector<int> &solucao, int coleta, int deposito){
     }
     bestVerticesList.clear();
 
-  for (size_t i = 0; i < solucao.size(); i++){
-    cout << solucao[i] << " ";
-  }
-
-  cout << endl;
-
     // Se não tiverem mais candidatos o loop acaba
     if(verticesRestantes == 1) {
-
       break;
     }
   }
 
-  // Mostra solução
-  for (size_t i = 0; i < solucao.size(); i++){
-    cout << solucao[i] << " ";
-    //cout << solucaoInicial[i] << " ";
-  }
+  // // Mostra solução
+  // for (size_t i = 0; i < solucao.size(); i++){
+  //   cout << solucao[i] << " ";
+  //   //cout << solucaoInicial[i] << " ";
+  // }
 
 }
 void rvnd(vector<int> &solucao){
@@ -185,16 +167,21 @@ void reinsertion(vector<int> &solucao){
   int custoRetiradaVizinho;
   tInsercao insercao;
   tInsercao vizinho;
+  tInsercao vertice;
 
   // Preenche vectors
-  for (size_t i = 1; i < tamanhoSolucao; i++) {
+  for (size_t i = 1; i < tamanhoSolucao-1; i++) {
     vizinho.pos = i;
     vizinho.vertice = solucao[i];
     vizinhanca.push_back(vizinho);
   }
 
-  // for (size_t i = 0; i <= dimension; i++) {
-  //   cout << solucao[i] << " ";
+  for(size_t i = 0; i < vizinhanca.size(); i++){
+    cout << vizinhanca[i].pos << " ";
+  } cout << endl;
+
+  // for (size_t i = 0; i < vizinhanca.size(); i++) {
+  //   cout << vizinhanca[i].vertice << " ";
   // }
   // cout << endl;
 
@@ -209,17 +196,17 @@ void reinsertion(vector<int> &solucao){
     verticeVizinho = linear_i(mt);
     vizinho = vizinhanca[verticeVizinho];
 
-    cout << endl << "TESTE" << endl;
-
     // Encontra ótimo local do vizinho na vizinhança
       // Calcula custo da retirada
     custoRetiradaVizinho = matrizAdj[solucao[vizinho.pos-1]][solucao[vizinho.pos+1]] - (matrizAdj[solucao[vizinho.pos-1]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[vizinho.pos+1]]);
-
+    
       // Salva custo e a posição da inserção
     insercao.custo = -custoRetiradaVizinho;
     insercao.pos = vizinho.pos;
 
-    for (size_t i = 0; i < tamanhoSolucao; i++) {
+    cout << "Teste" << endl;
+
+    for (size_t i = 1; i < tamanhoSolucao-1; i++) {
       if (solucao[i] == vizinho.vertice || solucao[i+1] == vizinho.vertice) {
         continue;
       } else if (insercao.custo > (matrizAdj[solucao[i]][solucao[i+1]] - (matrizAdj[solucao[i]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[i+1]]))){
@@ -227,11 +214,14 @@ void reinsertion(vector<int> &solucao){
         insercao.custo = matrizAdj[solucao[i]][solucao[i+1]] - (matrizAdj[solucao[i]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[i+1]]);
       }
     }
+    cout << "Teste" << endl;
 
     // Testa se causou alguma melhora
     if((custoSolucaoAnterior + insercao.custo + custoRetiradaVizinho) < custoSolucaoAnterior){
+      cout << vizinho.vertice << " " << vizinho.pos + 1 << endl;
+      cout << insercao.pos;
       // Grava solução
-      solucao.erase(solucao.begin() + vizinho.pos);
+      solucao.erase(solucao.begin() + vizinho.pos + 1);
       solucao.emplace(solucao.begin() + insercao.pos, vizinho.vertice);
 
       // if(insercao.pos > vizinho.pos) solucao.erase(solucao.begin() + vizinho.pos);
@@ -243,7 +233,7 @@ void reinsertion(vector<int> &solucao){
       // Atualiza vizinhança se necessário
       if(vizinhanca.size() < tamanhoSolucao){
         vizinhanca.clear();
-        for (size_t i = 1; i < tamanhoSolucao; i++) {
+        for (size_t i = 1; i < tamanhoSolucao-1; i++) {
           vizinho.pos = i;
           vizinho.vertice = solucao[i+1];
           vizinhanca.push_back(vizinho);
@@ -257,6 +247,8 @@ void reinsertion(vector<int> &solucao){
     if (vizinhanca.size() == 0) {
       break;
     }
+    printSolucao(solucao, tamanhoSolucao);
+    cout << endl;
     //cout << vizinhanca.size() << " | " << insercao.custo << " | " << vizinho.vertice;
   }
 }
@@ -371,15 +363,15 @@ void printSolucao(vector<int> &solucao, int tamanhoArray){
 
   cout << "]" << endl;
 }
+
 void custoSolucao(int *custoTotal, vector<int> solucao, int tamanhoArray) {
   *custoTotal = 0;
 
   for(size_t i = 0; i < solucao.size()-1; i++){
     *custoTotal += matrizAdj[solucao[i]][solucao[i + 1]];
-    cout << solucao[i] << " ";
-    //cout << i << " - " << matrizAdj[array[i]][array[i + 1]] << " - " << array[i+1] << endl;
   }
 }
+
 bool compareByCost(const tInsercao &data1, const tInsercao &data2){
   return data1.custo < data2.custo;
 }
