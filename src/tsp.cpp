@@ -52,8 +52,9 @@ int main(int argc, char** argv){
     deposito = 1;
 
     construtivo(solucao, coleta, deposito);
+    swap(solucao);
     reinsertion(solucao);
-
+   
     printSolucao(solucao, dimension);
     custoSolucao(&custoTotal, solucao, dimension);
 
@@ -176,17 +177,6 @@ void reinsertion(vector<int> &solucao){
     vizinhanca.push_back(vizinho);
   }
 
-  for(size_t i = 0; i < vizinhanca.size(); i++){
-    cout << vizinhanca[i].pos << " ";
-  } cout << endl;
-
-  for (size_t i = 0; i < vizinhanca.size(); i++) {
-    cout << vizinhanca[i].vertice << " ";
-  }
-  cout << endl;
-
-  cout << vizinhanca.size() << endl;
-
   //Verifica custo da solução
   custoSolucao(&custoSolucaoAnterior, solucao, dimension);
   custoSolucaoAtual = custoSolucaoAnterior;
@@ -203,24 +193,20 @@ void reinsertion(vector<int> &solucao){
     custoRetiradaVizinho = matrizAdj[solucao[vizinho.pos-1]][solucao[vizinho.pos+1]] - (matrizAdj[solucao[vizinho.pos-1]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[vizinho.pos+1]]);
 
       // Salva custo e a posição da inserção
-    insercao.custo = -custoRetiradaVizinho;
+    insercao.custo = (matrizAdj[solucao[vizinho.pos-1]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[vizinho.pos+1]]) - matrizAdj[solucao[vizinho.pos-1]][solucao[vizinho.pos+1]];
     insercao.pos = vizinho.pos;
 
     for (size_t i = 0; i < tamanhoSolucao-1; i++) {
       if (solucao[i] == vizinho.vertice || solucao[i+1] == vizinho.vertice) {
         continue;
-      } else if (insercao.custo > (matrizAdj[solucao[i]][solucao[i+1]] - (matrizAdj[solucao[i]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[i+1]]))){
+      } else if (insercao.custo > (matrizAdj[solucao[i]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[i+1]]) - (matrizAdj[solucao[i]][solucao[i+1]])){
         insercao.pos = i+1;
-        insercao.custo = matrizAdj[solucao[i]][solucao[i+1]] - (matrizAdj[solucao[i]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[i+1]]);
+        insercao.custo = (matrizAdj[solucao[i]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[i+1]]) - matrizAdj[solucao[i]][solucao[i+1]];
       }
     }
     
     // Testa se causou alguma melhora
     if((custoSolucaoAnterior + insercao.custo + custoRetiradaVizinho) < custoSolucaoAnterior){
-      cout << vizinho.vertice << " " << vizinho.pos << endl;
-      cout << insercao.pos;
-      // Grava solução
-      //solucao.erase(solucao.begin() + vizinho.pos);
       solucao.emplace(solucao.begin() + insercao.pos, vizinho.vertice);
 
       if(insercao.pos > vizinho.pos) solucao.erase(solucao.begin() + vizinho.pos);
@@ -246,104 +232,94 @@ void reinsertion(vector<int> &solucao){
     if (vizinhanca.size() == 0) {
       break;
     }
-    //cout << endl << vizinhanca.size() << endl;
-  for(size_t i = 0; i < vizinhanca.size(); i++){
-    cout << vizinhanca[i].pos << " ";
-  }cout << endl;
-    cout << endl;
-    //cout << vizinhanca.size() << " | " << insercao.custo << " | " << vizinho.vertice;
   }
 }
+
 void swap(vector<int> &solucao){
-  // //Inicia variáveis
-  // vector<tSwap> listaSwaps;
-  // vector<tSwap> listaSwapsRaiz;
+  //Inicia variáveis
+  vector<tSwap> listaSwaps;
+  vector<tSwap> listaSwapsRaiz;
 
-  // mt19937 mt(42); // Gerador de números aleatórios
+  mt19937 mt(42); // Gerador de números aleatórios
 
-  // int tamanhoSolucao = solucao.size();
-  // int listaSwapsSize;
-  // int randomSwap;
-  // int verticeSwap1;
-  // int verticeSwap2;
-  // int posSwap1;
-  // int posSwap2;
-  // int custoSolucaoSwap;
-  // tSwap swap;
+  int tamanhoSolucao = solucao.size();
+  int custoSolucaoSwap;
+  int custoSwap;
+  int randomSwap;
+  tSwap swap;
 
-  // //Gera lista de possíveis swaps
-  // for (size_t i = 0; i < tamanhoSolucao; i++) {
-  //   for (size_t j = 0; j < tamanhoSolucao; j++) {
-  //     swap.pos1 = i;
-  //     swap.vertice1 = solucao[i];
-  //     swap.pos2 = j;
-  //     swap.vertice2 = solucao[j];
-  //     listaSwapsRaiz.push_back(swap);
-  //   }
-  // }
+  //Gera lista de possíveis swaps
+  for (size_t i = 1; i < tamanhoSolucao - 1; i++) {
+    for (size_t j = 1; j < tamanhoSolucao - 1; j++) {
+      if(j == i || j == i - 1 || j == i + 1) continue;
+      swap.pos1 = i;
+      swap.vertice1 = solucao[i];
+      swap.pos2 = j;
+      swap.vertice2 = solucao[j];
+      listaSwapsRaiz.push_back(swap);
+    }
+  }
 
-  // listaSwaps = listaSwapsRaiz;
+  listaSwaps = listaSwapsRaiz;
 
-  // //Custo da solução
-  // custoSolucao(&custoSolucaoSwap, solucao, dimension);
+  //Custo da solução
+  custoSolucao(&custoSolucaoSwap, solucao, dimension);
 
-  // //Encontra mínimo local
-  // while (1){
-  //   listaSwapsSize = listaSwaps.size();
-  //   //Escolhe uma troca aleatória
-  //   uniform_int_distribution<int> linear_i(0, listaSwapsSize-1); // Distribuição linear de inteiros para escolher swap
-  //   randomSwap = linear_i(mt);
+  //Encontra mínimo local
+  while (1){
+    // Escolhe swar aleatório
+    uniform_int_distribution<int> linear_i(0, listaSwaps.size()-1);
+    randomSwap = linear_i(mt);
+    swap = listaSwaps[randomSwap];
 
-  //   //Calcula custo do swap
-  //   verticeSwap1 = listaSwaps[randomSwap].vertice1;
-  //   verticeSwap2 = listaSwaps[randomSwap].vertice2;
-  //   posSwap1 = listaSwaps[randomSwap].pos1;
-  //   posSwap2 = listaSwaps[randomSwap].pos2;
-  //   posAntSwap1 = ;
-  //   posAntSwap2 = ;
-  //   posDepSwap1 = ;
-  //   posDepSwap2 = ;
+    //Calcula custo do swap
+    //cout << "Teste - 1" << endl;
+    custoSwap = 
+      ( //Troca vertice 1 para o 2
+        (matrizAdj[solucao[swap.pos1 - 1]][swap.vertice2] + matrizAdj[swap.vertice2][solucao[swap.pos1 + 1]]) -
+        (matrizAdj[solucao[swap.pos1 - 1]][swap.vertice1] + matrizAdj[swap.vertice1][solucao[swap.pos1 + 1]]) 
+      ) + ( //Troca vertice 2 para o 1
+        (matrizAdj[solucao[swap.pos2 - 1]][swap.vertice1] + matrizAdj[swap.vertice1][solucao[swap.pos2 + 1]]) -
+        (matrizAdj[solucao[swap.pos2 - 1]][swap.vertice2] + matrizAdj[swap.vertice2][solucao[swap.pos2 + 1]])
+      );
+    //cout << "Teste -- 2" << endl;
+    // cout << solucao[swap.pos1 - 1] << " | " << solucao[swap.pos1 + 1] << " | " << solucao[swap.pos1 - 1] << swap.vertice << swap. "Custo calculo: " << (matrizAdj[solucao[swap.pos1 - 1]][solucao[swap.vertice1]] + matrizAdj[solucao[swap.vertice1]][solucao[swap.pos1 + 1]]) << endl;
+    // cout << "Custo Troca: " << custoSolucaoSwap + custoSwap << " | Custo anterior: " << custoSolucaoSwap << endl;
+    //Testa se houve melhora 
+    if(custoSolucaoSwap + custoSwap < custoSolucaoSwap){ //Se houve
+      //cout << "Teste --- 3" << endl;
+      //Adiciona primeiro vertice
+      solucao.emplace(solucao.begin() + swap.pos1, swap.vertice2);
+      solucao.erase(solucao.begin() + swap.pos1 + 1);
+      //Adiciona segundo vertice
+      solucao.emplace(solucao.begin() + swap.pos2, swap.vertice1);
+      solucao.erase(solucao.begin() + swap.pos2 + 1);
+      //cout << "Teste ---- 4" << endl;
+      //Salva novo custo
+      custoSolucaoSwap = custoSolucaoSwap + custoSwap;
 
-  //   if(posSwap1+1 != posSwap2 || posSwap1-1 != posSwap2) {
-  //     listaSwaps[randomSwap].custo =
-  //       ( (matrizAdj[solucao[posSwap1-1]][verticeSwap2] + matrizAdj[verticeSwap2][solucao[posSwap1+1]]) - (matrizAdj[solucao[posSwap1-1]][verticeSwap1] + matrizAdj[verticeSwap1][solucao[posSwap1+1]]) )+
-  //       ( (matrizAdj[solucao[posSwap2-1]][verticeSwap1] + matrizAdj[verticeSwap1][solucao[posSwap2+1]]) - (matrizAdj[solucao[posSwap2-1]][verticeSwap2] + matrizAdj[verticeSwap2][solucao[posSwap2+1]]) );
-  //   } else {
-  //     if(posSwap1 < posSwap2) {
-  //       listaSwaps[randomSwap].custo =
-  //         ( (matrizAdj[solucao[posSwap1-1]][verticeSwap1] + matrizAdj[verticeSwap1][verticeSwap2] + matrizAdj[verticeSwap2][solucao[posSwap2+1]]) )-
-  //         ( (matrizAdj[solucao[posSwap1-1]][verticeSwap2] + matrizAdj[verticeSwap2][verticeSwap1] + matrizAdj[verticeSwap1][solucao[posSwap2+1]]) );
-  //     } else {
-  //       listaSwaps[randomSwap].custo =
-  //         ( (matrizAdj[solucao[posSwap2-1]][verticeSwap2] + matrizAdj[verticeSwap2][verticeSwap1] + matrizAdj[verticeSwap1][solucao[posSwap1+1]]) )-
-  //         ( (matrizAdj[solucao[posSwap2-1]][verticeSwap1] + matrizAdj[verticeSwap1][verticeSwap2] + matrizAdj[verticeSwap2][solucao[posSwap1+1]]) );
-  //     }
-  //   }
+      //Cria nova lista de swaps possíveis
+      listaSwaps.clear();
+      for (size_t i = 1; i < tamanhoSolucao - 1; i++) {
+        for (size_t j = 1; j < tamanhoSolucao - 1; j++) {
+          if(j == i || j == i - 1 || j == i + 1) continue;
+          swap.pos1 = i;
+          swap.vertice1 = solucao[i];
+          swap.pos2 = j;
+          swap.vertice2 = solucao[j];
+          listaSwaps.push_back(swap);
+        }
+      }
+    } else { //Caso não
+      //Apaga swap
+      //cout << "Teste ----- 5 | " << randomSwap << " | " << listaSwaps[randomSwap].pos1 << endl;
+      listaSwaps.erase(listaSwaps.begin() + randomSwap);
+      //cout << "Teste ------ 6" << endl;
+    }
 
-  //   //Testa se ouve melhora no custo da solução
-  //   if ( (custoSolucaoSwap + listaSwaps[randomSwap].custo) < custoSolucaoSwap) {
-  //     //Grava solução
-  //     solucao[posSwap1] = verticeSwap2;
-  //     solucao[posSwap2] = verticeSwap1;
-
-  //     //Grava novo custo
-  //     custoSolucaoSwap = custoSolucaoSwap + listaSwaps[randomSwap].custo;
-
-  //     //Atualiza vizinhanca cas seja necessário
-  //     if(listaSwapsSize < dimension){
-  //       listaSwaps = listaSwapsRaiz;
-  //     }
-  //   } else {
-  //     listaSwaps.erase(listaSwaps.begin() + randomSwap);
-  //   }
-
-  //   //cout << endl << listaSwaps[randomSwap].pos1 << " " << listaSwaps[randomSwap].pos2 << " " << listaSwaps[randomSwap].custo << endl;
-  //   cout << endl << listaSwaps.size() << endl;
-  //   // Se não tiver mais vizinhos quebra o while
-  //   if (listaSwaps.size() == 0){
-  //     break;
-  //   }
-  // }
+    //Caso não tenha mais swaps possíveis, sai do loop
+    if(listaSwaps.size() == 0) break;
+  }
 }
 
 // Untils
@@ -356,6 +332,7 @@ void printData() {
     cout << endl;
   }
 }
+
 void printSolucao(vector<int> &solucao, int tamanhoArray){
   cout << endl << "Solucao: [ ";
 
