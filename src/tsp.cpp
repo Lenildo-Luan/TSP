@@ -37,7 +37,7 @@ void construtivo(vector<int> &solucao, int coleta, int deposito);
 void rvnd(vector<int> &solucao);
 
 // Vizinhanças
-void reinsertion(vector<int> &solucao);
+void reinsertion(vector<int> &solucao, int blocoSize);
 void swap(vector<int> &solucao);
 
 //MAIN
@@ -53,7 +53,7 @@ int main(int argc, char** argv){
 
     construtivo(solucao, coleta, deposito);
     swap(solucao);
-    reinsertion(solucao);
+    reinsertion(solucao, 3);
    
     printSolucao(solucao, dimension);
     custoSolucao(&custoTotal, solucao, dimension);
@@ -154,9 +154,10 @@ void rvnd(vector<int> &solucao){
 }
 
 // Vizinhanças
-void reinsertion(vector<int> &solucao){
+void reinsertion(vector<int> &solucao, int blocoSize){
   // Inicia variáveis
   vector<tInsercao> vizinhanca;
+  vector<tInsercao> bloco;
 
   mt19937 mt(42); // Gerador de números aleatórios
 
@@ -165,16 +166,19 @@ void reinsertion(vector<int> &solucao){
   int verticeVizinho;
   int custoSolucaoAnterior;
   int custoSolucaoAtual;
-  int custoRetiradaVizinho;
+  int custoRetirada;
+  int cursoInsercao;
+  int deltaCusto;
   tInsercao insercao;
+  tInsercao vizinhoAdd;
   tInsercao vizinho;
   tInsercao vertice;
 
   // Preenche vectors
   for (size_t i = 1; i < tamanhoSolucao-1; i++) {
-    vizinho.pos = i;
-    vizinho.vertice = solucao[i];
-    vizinhanca.push_back(vizinho);
+    vizinhoAdd.pos = i;
+    vizinhoAdd.vertice = solucao[i];
+    vizinhanca.push_back(vizinhoAdd);
   }
 
   //Verifica custo da solução
@@ -188,50 +192,68 @@ void reinsertion(vector<int> &solucao){
     verticeVizinho = linear_i(mt);
     vizinho = vizinhanca[verticeVizinho];
 
-    // Encontra ótimo local do vizinho na vizinhança
-      // Calcula custo da retirada
-    custoRetiradaVizinho = matrizAdj[solucao[vizinho.pos-1]][solucao[vizinho.pos+1]] - (matrizAdj[solucao[vizinho.pos-1]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[vizinho.pos+1]]);
-
-      // Salva custo e a posição da inserção
-    insercao.custo = (matrizAdj[solucao[vizinho.pos-1]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[vizinho.pos+1]]) - matrizAdj[solucao[vizinho.pos-1]][solucao[vizinho.pos+1]];
-    insercao.pos = vizinho.pos;
-
-    for (size_t i = 0; i < tamanhoSolucao-1; i++) {
-      if (solucao[i] == vizinho.vertice || solucao[i+1] == vizinho.vertice) {
-        continue;
-      } else if (insercao.custo > (matrizAdj[solucao[i]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[i+1]]) - (matrizAdj[solucao[i]][solucao[i+1]])){
-        insercao.pos = i+1;
-        insercao.custo = (matrizAdj[solucao[i]][vizinho.vertice] + matrizAdj[vizinho.vertice][solucao[i+1]]) - matrizAdj[solucao[i]][solucao[i+1]];
+    //Preenche vector do bloco a ser movido
+    if (tamanhoSolucao - 2 <= blocoSize){
+      cout << "Este bloco está muito grande!" << endl;
+      break;
+    } else if(tamanhoSolucao - vizinho.pos > blocoSize){
+      for(size_t i = 0; i < blocoSize; i++){
+        vizinhoAdd.pos = vizinho.pos + i;
+        vizinhoAdd.vertice = solucao[vizinho.pos + i];
+        bloco.push_back(vizinhoAdd);
+        solucao.erase(solucao.begin() + vizinho.pos);
+      }
+    } else {      
+      for(size_t i = 0; i < blocoSize; i++){
+        vizinhoAdd.pos = vizinho.pos - i;
+        vizinhoAdd.vertice = solucao[vizinho.pos - i];
+        bloco.push_back(vizinhoAdd);
+        solucao.erase(solucao.begin() + vizinho.pos);
       }
     }
-    
-    // Testa se causou alguma melhora
-    if((custoSolucaoAnterior + insercao.custo + custoRetiradaVizinho) < custoSolucaoAnterior){
-      solucao.emplace(solucao.begin() + insercao.pos, vizinho.vertice);
 
-      if(insercao.pos > vizinho.pos) solucao.erase(solucao.begin() + vizinho.pos);
-      else solucao.erase(solucao.begin() + vizinho.pos + 1);
+    custoRetirada = matrizAdj[solucao[bloco.front().pos - 1]][solucao[bloco.back().pos + 1]] -  
+                    ( matrizAdj[solucao[bloco.front().pos - 1]][bloco.front().vertice] + 
+                      matrizAdj[bloco.back().vertice][solucao[bloco.back().pos + 1]] );
 
-      //Grava novo custo
-      custoSolucaoAnterior = custoSolucaoAnterior + insercao.custo + custoRetiradaVizinho;
+    // for(size_t i = 0; i < bloco.size(); i++){
+    //   cout << bloco[i].vertice << " ";
+    // } cout << endl;
 
-      // Atualiza vizinhança se necessário
-      vizinhanca.clear();
-      
-      for (size_t i = 1; i < tamanhoSolucao-1; i++) {
-        vizinho.pos = i;
-        vizinho.vertice = solucao[i];
-        vizinhanca.push_back(vizinho);
-      } 
-      
-    } else {
-      vizinhanca.erase(vizinhanca.begin() + verticeVizinho);
+    // Encontra ótimo local do vizinho na vizinhança
+    deltaCusto =  0;
+
+    for(size_t i = 0; i < tamanhoSolucao - 1; i++){
+      custoInsercao = matrizAdj[solucao[bloco.front().pos - 1]][solucao[bloco.back().pos + 1]] -  
+                      ( matrizAdj[solucao[bloco.front().pos - 1]][bloco.front().vertice] + 
+                        matrizAdj[bloco.back().vertice][solucao[bloco.back().pos + 1]] );
     }
+    
+    // // Testa se causou alguma melhora
+    // if((){
+
+
+    //   //Grava novo custo
+      
+
+    //   // Atualiza vizinhança se necessário
+    //   vizinhanca.clear();
+      
+    //   for (size_t i = 1; i < tamanhoSolucao-1; i++) {
+    //     vizinho.pos = i;
+    //     vizinho.vertice = solucao[i];
+    //     vizinhanca.push_back(vizinho);
+    //   } 
+      
+    // } else {
+    //   vizinhanca.erase(vizinhanca.begin() + verticeVizinho);
+    // }
 
     // Se não tiver mais vizinhos quebra o while
     if (vizinhanca.size() == 0) {
       break;
     }
+    break;
   }
 }
 
