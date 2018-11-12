@@ -13,13 +13,17 @@ typedef struct{
   int vertice;
   int custo;
 } tInsercao;
+typedef struct{
+  int posVertice;
+  int posInsercao;
+  int vertice;
+} tReinsercao;
 
 typedef struct{
   int pos1;
   int vertice1;
   int pos2;
   int vertice2;
-  int custo;
 } tSwap;
 
 // Pega da instâncias
@@ -39,6 +43,7 @@ void rvnd(vector<int> &solucao);
 // Vizinhanças
 void reinsertion(vector<int> &solucao, int blocoSize);
 void swap(vector<int> &solucao);
+void twoOptN(vector<int> &solucao){}
 
 //MAIN
 int main(int argc, char** argv){
@@ -52,8 +57,8 @@ int main(int argc, char** argv){
     deposito = 1;
 
     construtivo(solucao, coleta, deposito);
+    //reinsertion(solucao, 1);
     swap(solucao);
-    reinsertion(solucao, 3);
    
     printSolucao(solucao, dimension);
     custoSolucao(&custoTotal, solucao, dimension);
@@ -156,191 +161,136 @@ void rvnd(vector<int> &solucao){
 // Vizinhanças
 void reinsertion(vector<int> &solucao, int blocoSize){
   // Inicia variáveis
-  vector<tInsercao> vizinhanca;
-  vector<tInsercao> bloco;
+  int deltaCusto = 0;
+  int custoRetirada = 0;
+  int custoInsercao = 0;
+  int custoDaSolucao = 0;
+  bool flag = false;
+  
+  tReinsercao insercao;
 
-  mt19937 mt(42); // Gerador de números aleatórios
+  custoSolucao(&custoDaSolucao, solucao, dimension);
 
-  int tamanhoVizinhanca;
-  int tamanhoSolucao = solucao.size();
-  int verticeVizinho;
-  int custoSolucaoAnterior;
-  int custoSolucaoAtual;
-  int custoRetirada;
-  int cursoInsercao;
-  int deltaCusto;
-  tInsercao insercao;
-  tInsercao vizinhoAdd;
-  tInsercao vizinho;
-  tInsercao vertice;
-
-  // Preenche vectors
-  for (size_t i = 1; i < tamanhoSolucao-1; i++) {
-    vizinhoAdd.pos = i;
-    vizinhoAdd.vertice = solucao[i];
-    vizinhanca.push_back(vizinhoAdd);
-  }
-
-  //Verifica custo da solução
-  custoSolucao(&custoSolucaoAnterior, solucao, dimension);
-  custoSolucaoAtual = custoSolucaoAnterior;
-
-  // Busca ótimo local
   while(1){
-    // Seleciona vizinho aleatório
-    uniform_int_distribution<int> linear_i(0, vizinhanca.size()-1); // Distribuição linear de inteiros para escolher vizinho
-    verticeVizinho = linear_i(mt);
-    vizinho = vizinhanca[verticeVizinho];
+    //Procura local de melhor reinserção
+    for(size_t i = 1; i < solucao.size() - 1 - blocoSize; i++){
+      custoRetirada = matrizAdj[solucao[i-1]][solucao[i+blocoSize]] - (matrizAdj[solucao[i-1]][solucao[i]] + matrizAdj[solucao[i+blocoSize-1]][solucao[i+blocoSize]]); 
+      
+      for(size_t y = i+blocoSize; y < solucao.size() - blocoSize; y++){
+        custoInsercao = (matrizAdj[solucao[y]][solucao[i]] + matrizAdj[solucao[i+blocoSize-1]][solucao[y+1]]) - matrizAdj[solucao[y]][solucao[y+1]]; 
 
-    //Preenche vector do bloco a ser movido
-    if (tamanhoSolucao - 2 <= blocoSize){
-      cout << "Este bloco está muito grande!" << endl;
-      break;
-    } else if(tamanhoSolucao - vizinho.pos > blocoSize){
-      for(size_t i = 0; i < blocoSize; i++){
-        vizinhoAdd.pos = vizinho.pos + i;
-        vizinhoAdd.vertice = solucao[vizinho.pos + i];
-        bloco.push_back(vizinhoAdd);
-        solucao.erase(solucao.begin() + vizinho.pos);
-      }
-    } else {      
-      for(size_t i = 0; i < blocoSize; i++){
-        vizinhoAdd.pos = vizinho.pos - i;
-        vizinhoAdd.vertice = solucao[vizinho.pos - i];
-        bloco.push_back(vizinhoAdd);
-        solucao.erase(solucao.begin() + vizinho.pos);
+        if((custoRetirada + custoInsercao) < deltaCusto){
+          flag = true;
+
+          deltaCusto = custoInsercao + custoRetirada;
+          insercao.posVertice = i;
+          insercao.posInsercao = y+1;
+          insercao.vertice = solucao[i];
+        }
       }
     }
 
-    custoRetirada = matrizAdj[solucao[bloco.front().pos - 1]][solucao[bloco.back().pos + 1]] -  
-                    ( matrizAdj[solucao[bloco.front().pos - 1]][bloco.front().vertice] + 
-                      matrizAdj[bloco.back().vertice][solucao[bloco.back().pos + 1]] );
+    //Aplica reinserção
+    if(flag){
+      custoDaSolucao = custoDaSolucao + deltaCusto;
 
-    // for(size_t i = 0; i < bloco.size(); i++){
-    //   cout << bloco[i].vertice << " ";
-    // } cout << endl;
+      if(blocoSize == 1){
+        solucao.insert(solucao.begin() + insercao.posInsercao, solucao[insercao.posVertice]);
+        solucao.erase(solucao.begin() + insercao.posVertice);
+      } else {
+        solucao.insert(solucao.begin() + insercao.posInsercao, solucao.begin() + insercao.posVertice, solucao.begin() + insercao.posVertice + blocoSize);
+        //printSolucao(solucao, solucao.size());
+        solucao.erase(solucao.begin() + insercao.posVertice, solucao.begin() + insercao.posVertice + blocoSize);        
+      }
 
-    // Encontra ótimo local do vizinho na vizinhança
-    deltaCusto =  0;
+      flag = false;
+      deltaCusto = 0;
 
-    for(size_t i = 0; i < tamanhoSolucao - 1; i++){
-      custoInsercao = matrizAdj[solucao[bloco.front().pos - 1]][solucao[bloco.back().pos + 1]] -  
-                      ( matrizAdj[solucao[bloco.front().pos - 1]][bloco.front().vertice] + 
-                        matrizAdj[bloco.back().vertice][solucao[bloco.back().pos + 1]] );
-    }
-    
-    // // Testa se causou alguma melhora
-    // if((){
-
-
-    //   //Grava novo custo
-      
-
-    //   // Atualiza vizinhança se necessário
-    //   vizinhanca.clear();
-      
-    //   for (size_t i = 1; i < tamanhoSolucao-1; i++) {
-    //     vizinho.pos = i;
-    //     vizinho.vertice = solucao[i];
-    //     vizinhanca.push_back(vizinho);
-    //   } 
-      
-    // } else {
-    //   vizinhanca.erase(vizinhanca.begin() + verticeVizinho);
-    // }
-
-    // Se não tiver mais vizinhos quebra o while
-    if (vizinhanca.size() == 0) {
+    } else {
       break;
     }
-    break;
-  }
+  }  
+
 }
 
 void swap(vector<int> &solucao){
   //Inicia variáveis
-  vector<tSwap> listaSwaps;
-  vector<tSwap> listaSwapsRaiz;
+  int deltaCusto = 0;
+  int custoRetirada = 0;
+  int custoInsercao = 0;
+  int custoDaSolucao = 0;
+  bool flag = false;
 
-  mt19937 mt(42); // Gerador de números aleatórios
-
-  int tamanhoSolucao = solucao.size();
-  int custoSolucaoSwap;
-  int custoSwap;
-  int randomSwap;
   tSwap swap;
 
-  //Gera lista de possíveis swaps
-  for (size_t i = 1; i < tamanhoSolucao - 1; i++) {
-    for (size_t j = 1; j < tamanhoSolucao - 1; j++) {
-      if(j == i || j == i - 1 || j == i + 1) continue;
-      swap.pos1 = i;
-      swap.vertice1 = solucao[i];
-      swap.pos2 = j;
-      swap.vertice2 = solucao[j];
-      listaSwapsRaiz.push_back(swap);
-    }
-  }
+  custoSolucao(&custoDaSolucao, solucao, dimension);
 
-  listaSwaps = listaSwapsRaiz;
+  while(1){
+    //Aplica reinserção
+    for(size_t i = 1; i < solucao.size() - 3; i++){      
+      for(size_t y = i+2; y < solucao.size()-1; y++){
+        custoRetirada = matrizAdj[solucao[i-1]][solucao[i]] + matrizAdj[solucao[i]][solucao[i+1]] +
+                        matrizAdj[solucao[y-1]][solucao[y]] + matrizAdj[solucao[y]][solucao[y+1]]; 
 
-  //Custo da solução
-  custoSolucao(&custoSolucaoSwap, solucao, dimension);
+        custoInsercao = matrizAdj[solucao[i-1]][solucao[y]] + matrizAdj[solucao[y]][solucao[i+1]] +
+                        matrizAdj[solucao[y-1]][solucao[i]] + matrizAdj[solucao[i]][solucao[y+1]]; 
 
-  //Encontra mínimo local
-  while (1){
-    // Escolhe swar aleatório
-    uniform_int_distribution<int> linear_i(0, listaSwaps.size()-1);
-    randomSwap = linear_i(mt);
-    swap = listaSwaps[randomSwap];
+        if((custoInsercao - custoRetirada) < deltaCusto){
+          flag = true;
 
-    //Calcula custo do swap
-    //cout << "Teste - 1" << endl;
-    custoSwap = 
-      ( //Troca vertice 1 para o 2
-        (matrizAdj[solucao[swap.pos1 - 1]][swap.vertice2] + matrizAdj[swap.vertice2][solucao[swap.pos1 + 1]]) -
-        (matrizAdj[solucao[swap.pos1 - 1]][swap.vertice1] + matrizAdj[swap.vertice1][solucao[swap.pos1 + 1]]) 
-      ) + ( //Troca vertice 2 para o 1
-        (matrizAdj[solucao[swap.pos2 - 1]][swap.vertice1] + matrizAdj[swap.vertice1][solucao[swap.pos2 + 1]]) -
-        (matrizAdj[solucao[swap.pos2 - 1]][swap.vertice2] + matrizAdj[swap.vertice2][solucao[swap.pos2 + 1]])
-      );
-    //cout << "Teste -- 2" << endl;
-    // cout << solucao[swap.pos1 - 1] << " | " << solucao[swap.pos1 + 1] << " | " << solucao[swap.pos1 - 1] << swap.vertice << swap. "Custo calculo: " << (matrizAdj[solucao[swap.pos1 - 1]][solucao[swap.vertice1]] + matrizAdj[solucao[swap.vertice1]][solucao[swap.pos1 + 1]]) << endl;
-    // cout << "Custo Troca: " << custoSolucaoSwap + custoSwap << " | Custo anterior: " << custoSolucaoSwap << endl;
-    //Testa se houve melhora 
-    if(custoSolucaoSwap + custoSwap < custoSolucaoSwap){ //Se houve
-      //cout << "Teste --- 3" << endl;
-      //Adiciona primeiro vertice
-      solucao.emplace(solucao.begin() + swap.pos1, swap.vertice2);
-      solucao.erase(solucao.begin() + swap.pos1 + 1);
-      //Adiciona segundo vertice
-      solucao.emplace(solucao.begin() + swap.pos2, swap.vertice1);
-      solucao.erase(solucao.begin() + swap.pos2 + 1);
-      //cout << "Teste ---- 4" << endl;
-      //Salva novo custo
-      custoSolucaoSwap = custoSolucaoSwap + custoSwap;
-
-      //Cria nova lista de swaps possíveis
-      listaSwaps.clear();
-      for (size_t i = 1; i < tamanhoSolucao - 1; i++) {
-        for (size_t j = 1; j < tamanhoSolucao - 1; j++) {
-          if(j == i || j == i - 1 || j == i + 1) continue;
+          deltaCusto = custoInsercao - custoRetirada;
           swap.pos1 = i;
           swap.vertice1 = solucao[i];
-          swap.pos2 = j;
-          swap.vertice2 = solucao[j];
-          listaSwaps.push_back(swap);
+          swap.pos2 = y;
+          swap.vertice2 = solucao[y];
         }
       }
-    } else { //Caso não
-      //Apaga swap
-      //cout << "Teste ----- 5 | " << randomSwap << " | " << listaSwaps[randomSwap].pos1 << endl;
-      listaSwaps.erase(listaSwaps.begin() + randomSwap);
-      //cout << "Teste ------ 6" << endl;
     }
 
-    //Caso não tenha mais swaps possíveis, sai do loop
-    if(listaSwaps.size() == 0) break;
+    if(flag){
+      custoDaSolucao = custoDaSolucao + deltaCusto;
+
+      solucao.erase(solucao.begin() + swap.pos2);
+      solucao.emplace(solucao.begin() + swap.pos2, swap.vertice1);
+
+      solucao.erase(solucao.begin() + swap.pos1);
+      solucao.emplace(solucao.begin() + swap.pos1, swap.vertice2);
+
+      flag = false;
+      deltaCusto = 0;
+
+    } else {
+      break;
+
+    }
+  }
+}
+
+void twoOptN(vector<int> &solucao){
+  //Inicia variáveis
+  int deltaCusto = 0;
+  int custoRetirada = 0;
+  int custoInsercao = 0;
+  int custoDaSolucao = 0;
+  bool flag = false;
+
+  tSwap swap;
+
+  custoSolucao(&custoDaSolucao, solucao, dimension);
+
+  while(1){
+    for(size_t i = 1; i < solucao.size() - 3; i++){
+      for(size_t y = i + 2; y < solucao.size(); i++){
+        custoRetirada = matrizAdj[solucao[i]][solucao[i+1]] + matrizAdj[solucao[y-1]][solucao[y]];
+        custoInsercao = matrizAdj[solucao[i]][solucao[y-1]] + matrizAdj[solucao[i+1]][solucao[y]];
+
+        if((custoInsercao - custoRetirada) < deltaCusto){
+          deltaCusto = custoInsercao - custoRetirada;
+
+          
+        }
+      }
+    }
   }
 }
 
