@@ -13,6 +13,7 @@ typedef struct{
   int vertice;
   int custo;
 } tInsercao;
+
 typedef struct{
   int posVertice;
   int posInsercao;
@@ -43,7 +44,7 @@ void rvnd(vector<int> &solucao);
 // Vizinhanças
 void reinsertion(vector<int> &solucao, int blocoSize);
 void swap(vector<int> &solucao);
-void twoOptN(vector<int> &solucao){}
+void twoOptN(vector<int> &solucao);
 
 //MAIN
 int main(int argc, char** argv){
@@ -58,7 +59,8 @@ int main(int argc, char** argv){
 
     construtivo(solucao, coleta, deposito);
     //reinsertion(solucao, 1);
-    swap(solucao);
+    //swap(solucao);
+    twoOptN(solucao);
    
     printSolucao(solucao, dimension);
     custoSolucao(&custoTotal, solucao, dimension);
@@ -272,27 +274,51 @@ void twoOptN(vector<int> &solucao){
   int custoRetirada = 0;
   int custoInsercao = 0;
   int custoDaSolucao = 0;
+  int aux = 0;
   bool flag = false;
 
   tSwap swap;
 
   custoSolucao(&custoDaSolucao, solucao, dimension);
-
+  
   while(1){
     for(size_t i = 1; i < solucao.size() - 3; i++){
-      for(size_t y = i + 2; y < solucao.size(); i++){
+      
+      for(size_t y = i + 3; y < solucao.size(); y++){
+
         custoRetirada = matrizAdj[solucao[i]][solucao[i+1]] + matrizAdj[solucao[y-1]][solucao[y]];
         custoInsercao = matrizAdj[solucao[i]][solucao[y-1]] + matrizAdj[solucao[i+1]][solucao[y]];
 
         if((custoInsercao - custoRetirada) < deltaCusto){
-          deltaCusto = custoInsercao - custoRetirada;
+          flag = true;
 
-          
+          swap.pos1 = i + 1;
+          swap.vertice1 = solucao[i];
+          swap.pos2 = y - 1;
+          swap.vertice2 = solucao[y];
         }
       }
     }
+    
+    if(flag){
+      custoDaSolucao = custoDaSolucao + deltaCusto;
+
+      for(size_t i = 0; i < (swap.pos2 - swap.pos1); i++){
+        aux = solucao[swap.pos2];
+        solucao.erase(solucao.begin() + swap.pos2);
+        solucao.emplace(solucao.begin() + swap.pos1 + i, aux);      
+      }
+
+      flag = false;
+      deltaCusto = 0;
+
+    } else {
+      break;
+    }
   }
 }
+
+//Pertubation
 
 // Untils
 void printData() {
