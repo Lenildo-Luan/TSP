@@ -8,6 +8,8 @@
 
 using namespace std;
 
+
+
 typedef struct{
   int pos;
   int vertice;
@@ -39,12 +41,16 @@ bool compareByCost(const tInsercao &data1, const tInsercao &data2);
 
 //GILS-RVND
 void construtivo(vector<int> &solucao, int coleta, int deposito);
-void rvnd(vector<int> &solucao);
+int rvnd(vector<int> &solucao, int custoDaSolucaoAnterior);
+int gilsRvnd(vector<int> &solucao, int custoDaSolucaoAnterior);
 
 // Vizinhanças
-void reinsertion(vector<int> &solucao, int blocoSize);
-void swap(vector<int> &solucao);
-void twoOptN(vector<int> &solucao);
+int reinsertion(vector<int> &solucao, int blocoSize, int custoDaSolucaoAnterior);
+int swap(vector<int> &solucao, int custoDaSolucaoAnterior);
+int twoOptN(vector<int> &solucao, int custoDaSolucaoAnterior);
+
+//Pertubações
+void doubleBridge(vector<int> &solucao);
 
 //MAIN
 int main(int argc, char** argv){
@@ -58,12 +64,18 @@ int main(int argc, char** argv){
     deposito = 1;
 
     construtivo(solucao, coleta, deposito);
-    //reinsertion(solucao, 1);
-    //swap(solucao);
-    twoOptN(solucao);
-   
-    printSolucao(solucao, dimension);
     custoSolucao(&custoTotal, solucao, dimension);
+    printSolucao(solucao, dimension);
+    cout <<  "Custo: " << custoTotal << endl;
+
+    //reinsertion(solucao, 1, custoTotal);
+    //swap(solucao, custoTotal);
+    //twoOptN(solucao, custoTotal);
+    //doubleBridge(solucao);
+    //rvnd(solucao, custoTotal);
+
+    custoSolucao(&custoTotal, solucao, dimension);
+    printSolucao(solucao, dimension);
 
     cout <<  "Custo: " << custoTotal << endl;
 
@@ -76,7 +88,8 @@ void construtivo(vector<int> &solucao, int coleta, int deposito){
   vector<int> verticesList; // Lista de vertices faltando
   vector<tInsercao> bestVerticesList; // Lista dos X melhores verticesList
 
-  mt19937 mt(42); // Gerador de números aleatórios
+  random_device rd;
+  mt19937 mt(rd()); // Gerador de números aleatórios
   uniform_real_distribution<float> linear_f(0.0, 0.5); // Distribuição linear de reais para gerar alpha
 
   float alpha = 0.0;
@@ -156,22 +169,80 @@ void construtivo(vector<int> &solucao, int coleta, int deposito){
   // }
 
 }
-void rvnd(vector<int> &solucao){
+
+int rvnd(vector<int> &solucao, int custoDaSolucaoAnterior){
+  vector<int> vizinhanca = {1, 2, 3};
+  vector<int> solucaoTeste;
+
+  random_device rd;
+  mt19937 mt(rd());
+
+  int solucaoSize = solucao.size();
+  int vizinhoRandom = 0;
+  int random = 0;
+  int novoCusto = 0;
+  int custoAnterior = custoDaSolucaoAnterior;
+
+  for(size_t i = 0; i < solucaoSize; i++){
+    solucaoTeste.push_back(solucao[i]);
+  }
+
+  while(1){
+    uniform_int_distribution<int> linear_i(0, vizinhanca.size() - 1);
+    random = linear_i(mt);
+    vizinhoRandom = vizinhanca[random];
+
+    switch(vizinhoRandom){
+      case 1: 
+        novoCusto = reinsertion(solucaoTeste, 1, custoAnterior);
+        break;
+      case 2:
+        novoCusto = swap(solucaoTeste, custoAnterior);
+        break;
+      case 3:
+        novoCusto = twoOptN(solucaoTeste, custoAnterior);
+        break;      
+      default:
+        break;  
+    }
+
+    if(novoCusto < custoAnterior){
+      custoAnterior = novoCusto;
+      
+      solucao.clear();
+      for(size_t i = 0; i < solucaoSize; i++){
+        solucao.push_back(solucaoTeste[i]);
+      }
+
+      vizinhanca.clear();
+      for(size_t i = 0; i < 3; i++){
+        vizinhanca.push_back(i);
+      }
+    } else {
+      vizinhanca.erase(vizinhanca.begin() + random);
+    }
+
+    if(vizinhanca.size() == 0) break;
+  }
+
+  return custoAnterior;
+
+}
+
+int gilsRvnd(vector<int> &solucao, int custoDaSolucaoAnterior){
 
 }
 
 // Vizinhanças
-void reinsertion(vector<int> &solucao, int blocoSize){
+int reinsertion(vector<int> &solucao, int blocoSize, int custoDaSolucaoAnterior){
   // Inicia variáveis
   int deltaCusto = 0;
   int custoRetirada = 0;
   int custoInsercao = 0;
-  int custoDaSolucao = 0;
+  int custoDaSolucao = custoDaSolucaoAnterior;
   bool flag = false;
   
   tReinsercao insercao;
-
-  custoSolucao(&custoDaSolucao, solucao, dimension);
 
   while(1){
     //Procura local de melhor reinserção
@@ -213,19 +284,18 @@ void reinsertion(vector<int> &solucao, int blocoSize){
     }
   }  
 
+  return custoDaSolucao;
 }
 
-void swap(vector<int> &solucao){
+int swap(vector<int> &solucao, int custoDaSolucaoAnterior){
   //Inicia variáveis
   int deltaCusto = 0;
   int custoRetirada = 0;
   int custoInsercao = 0;
-  int custoDaSolucao = 0;
+  int custoDaSolucao = custoDaSolucaoAnterior;
   bool flag = false;
 
   tSwap swap;
-
-  custoSolucao(&custoDaSolucao, solucao, dimension);
 
   while(1){
     //Aplica reinserção
@@ -266,14 +336,16 @@ void swap(vector<int> &solucao){
 
     }
   }
+
+  return custoDaSolucao;
 }
 
-void twoOptN(vector<int> &solucao){
+int twoOptN(vector<int> &solucao, int custoDaSolucaoAnterior){
   //Inicia variáveis
   int deltaCusto = 0;
   int custoRetirada = 0;
   int custoInsercao = 0;
-  int custoDaSolucao = 0;
+  int custoDaSolucao = custoDaSolucaoAnterior;
   int aux = 0;
   bool flag = false;
 
@@ -316,9 +388,27 @@ void twoOptN(vector<int> &solucao){
       break;
     }
   }
+
+  return custoDaSolucao;
 }
 
-//Pertubation
+//Pertubações
+void doubleBridge(vector<int> &solucao){
+  int sizeBlock = (solucao.size() - 1) / 3;
+  int aux1 = 0;
+  int aux2 = 0;
+
+  for(size_t i = 0; i < sizeBlock; i++){
+    aux1 = solucao[i+1];
+    aux2 = solucao[i+1+(sizeBlock*2)];
+
+    solucao.erase(solucao.begin() + i + 1);
+    solucao.emplace(solucao.begin() + i + 1, aux2);
+
+    solucao.erase(solucao.begin() + i + 1 + (sizeBlock*2));
+    solucao.emplace(solucao.begin() + i + 1 + (sizeBlock*2), aux1);
+  }
+}
 
 // Untils
 void printData() {
