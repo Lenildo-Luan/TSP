@@ -1,4 +1,8 @@
 #include "readData.h"
+#include "Util.h"
+#include "json.hpp"
+
+#include <string>
 #include <random>
 #include <bits/stdc++.h>
 #include <fstream>
@@ -7,6 +11,7 @@
 #include <algorithm>
 
 using namespace std;
+using json = nlohmann::json;
 
 typedef struct{
   int pos;
@@ -30,6 +35,25 @@ typedef struct{
 // Pega da instâncias
 double ** matrizAdj; // matriz de adjacencia
 int dimension; // quantidade total de vertices
+
+//Benchmark
+json benchmarkReinsercao; // Json
+json benchmarkSwap; // Json 
+json benchmarkTwoOpt; // Json 
+json benchmarkDoubleBridge; // Json 
+
+int qtdMelhorasReinsercao = 0;
+double tempoReinsercao = 0;
+
+int qtdMelhorasSwap = 0;
+double tempoSwap = 0;
+
+int qtdMelhorasTwoOpt = 0;
+double tempoTwoOpt = 0;
+
+int qtdMelhorasDoubleBridge = 0;
+double tempoDoubleBridge = 0;
+//
 
 // Untils
 void printData(); // Mostra matriz de adjacencia
@@ -56,32 +80,41 @@ int main(int argc, char** argv){
     //printData();
 
     vector<int> solucao;
+
     int custoSolucao, coleta, deposito;
+    int flag = 0;
+    double tempoInicial = cpuTime();
 
-    // coleta = 1;
-    // deposito = 1;
-    //
-    // random_device rd;
-    // mt19937 mt(rd());
-    // uniform_real_distribution<float> linear_f(0.0, 0.5); // Distribuição linear de reais para gerar alpha
-    //
-    // float alpha = 0.0;
-    // alpha = linear_f(mt);
-    //
-    // custoSolucao = construtivo(solucao, coleta, deposito, alpha);
-    // printSolucao(solucao, dimension);
-    // cout <<  "Custo: " << custoSolucao << endl;
+    //Benchmark
+    string arquivo = argv[1];
+    string instancia;
+    string barra ("/");
+    string ponto (".");
 
-    //reinsertion(solucao, 1, custoTotal);
-    //swap(solucao, custoTotal);
-    //twoOptN(solucao, custoTotal);
-    //custoSolucao = rvnd(solucao, custoSolucao);
-    //custoSolucao = doubleBridge(solucao, custoSolucao);
+    //Benchmark
+    for(size_t i = 0; i < arquivo.size(); i++){
+      if(flag == 2 && arquivo[i] == ponto[0]) break;
+      else if(flag == 2) instancia.push_back(arquivo[i]);
+      else if(arquivo[i] == barra[0]) flag++;
+    }
+
+    //Benchmark
+    ofstream benchmarkArchiveReinsercao(instancia + "_reinsercao_benchmark" + ".json");
+    ofstream benchmarkArchiveSwap(instancia + "_swap_benchmark" + ".json");
+    ofstream benchmarkArchiveTwoOpt(instancia + "_twoOpt_benchmark" + ".json");
+    ofstream benchmarkArchiveDoubleBridge(instancia + "_doubleBridge_benchmark" + ".json");
 
     custoSolucao = gilsRvnd(solucao, 50, 4*dimension);
 
     printSolucao(solucao, dimension);
     cout <<  "Custo: " << custoSolucao << endl;
+    cout << "Tempo: " << cpuTime() - tempoInicial<< endl;
+
+    //Benchmark
+    benchmarkArchiveReinsercao << setw(4) << benchmarkReinsercao << endl;
+    benchmarkArchiveSwap << setw(4) << benchmarkSwap << endl;
+    benchmarkArchiveTwoOpt << setw(4) << benchmarkTwoOpt << endl;
+    benchmarkArchiveDoubleBridge << setw(4) << benchmarkDoubleBridge << endl;
 
     return 0;
 }
@@ -102,6 +135,7 @@ int construtivo(vector<int> &solucao, int coleta, int deposito, float alpha){
   int distanciaVertice;
   int custoSolucao = 0;
   tInsercao insercao;
+
   //Adiciona coleta ao vector
   solucao.push_back(coleta);
 
@@ -252,22 +286,24 @@ int gilsRvnd(vector<int> &solucaoFinal, int Imax, int Iils){
   int coleta = 1;
   int deposito = 1;
   int interILS;
+  int solucaoSize;
   float alpha = 0.0;
 
   //Busca Melhor Solução
   for (size_t i = 0; i < Imax; i++) {
-    // Gera Alfa e o interador de ILS
+    //Gera Alfa e o interador de ILS
     alpha = linear_f(mt);
     interILS = 0;
 
     //Calcula solução parcial com o método construtivo
     solucaoParcial.clear();
     custoParcial = construtivo(solucaoParcial, coleta, deposito, alpha);
+    solucaoSize = solucaoParcial.size();
 
     //Registra a solução parcial como melhor solução
     custoMelhor = custoParcial;
     solucaoMelhor.clear();
-    for (size_t i = 0; i < solucaoParcial.size(); i++){
+    for (size_t i = 0; i < solucaoSize; i++){
       solucaoMelhor.push_back(solucaoParcial[i]);
     }
 
@@ -281,9 +317,11 @@ int gilsRvnd(vector<int> &solucaoFinal, int Imax, int Iils){
         //Registra a solução parcial como melhor solução
         custoMelhor = custoParcial;
         solucaoMelhor.clear();
-        for (size_t i = 0; i < solucaoParcial.size(); i++){
+        for (size_t i = 0; i < solucaoSize; i++){
           solucaoMelhor.push_back(solucaoParcial[i]);
         }
+
+        qtdMelhorasDoubleBridge++;
 
         //Zera o iterador
         interILS = 0;
@@ -300,10 +338,43 @@ int gilsRvnd(vector<int> &solucaoFinal, int Imax, int Iils){
     if(custoMelhor < custoFinal){
       custoFinal = custoMelhor;
       solucaoFinal.clear();
-      for (size_t i = 0; i < solucaoMelhor.size(); i++){
+      for (size_t i = 0; i < solucaoSize; i++){
         solucaoFinal.push_back(solucaoMelhor[i]);
       }
     }
+
+    //Benchmark
+    benchmarkReinsercao[i]["Iteração"] = to_string(i);
+    benchmarkReinsercao[i]["qtdMelhoras"] = qtdMelhorasReinsercao;
+    benchmarkReinsercao[i]["tempo"] = tempoReinsercao;
+
+    qtdMelhorasReinsercao = 0;
+    tempoReinsercao = 0;
+
+    //Benchmark
+    benchmarkSwap[i]["Iteração"] = to_string(i);
+    benchmarkSwap[i]["qtdMelhoras"] = qtdMelhorasSwap;
+    benchmarkSwap[i]["tempo"] = tempoSwap;
+
+    qtdMelhorasSwap = 0;
+    tempoSwap = 0;
+
+    //Benchmark
+    benchmarkTwoOpt[i]["Iteração"] = to_string(i);
+    benchmarkTwoOpt[i]["qtdMelhoras"] = qtdMelhorasTwoOpt;
+    benchmarkTwoOpt[i]["tempo"] = tempoTwoOpt;
+
+    qtdMelhorasTwoOpt = 0;
+    tempoTwoOpt = 0;
+
+    //Benchmark
+    benchmarkDoubleBridge[i]["Iteração"] = to_string(i);
+    benchmarkDoubleBridge[i]["qtdMelhoras"] = qtdMelhorasDoubleBridge;
+    benchmarkDoubleBridge[i]["tempo"] = tempoDoubleBridge;
+
+    qtdMelhorasDoubleBridge = 0;
+    tempoDoubleBridge = 0;
+
   }
 
   return custoFinal;
@@ -316,16 +387,17 @@ int reinsertion(vector<int> &solucao, int blocoSize, int custoDaSolucaoAnterior)
   int custoRetirada = 0;
   int custoInsercao = 0;
   int custoDaSolucao = custoDaSolucaoAnterior;
+  int solucaoSize = solucao.size();
+  double tempoInicial = cpuTime();
   bool flag = false;
-
   tReinsercao insercao;
 
   while(1){
     //Procura local de melhor reinserção
-    for(size_t i = 1; i < solucao.size() - 1 - blocoSize; i++){
+    for(size_t i = 1; i < solucaoSize - 1 - blocoSize; i++){
       custoRetirada = matrizAdj[solucao[i-1]][solucao[i+blocoSize]] - (matrizAdj[solucao[i-1]][solucao[i]] + matrizAdj[solucao[i+blocoSize-1]][solucao[i+blocoSize]]);
 
-      for(size_t y = i+blocoSize; y < solucao.size() - blocoSize; y++){
+      for(size_t y = i+blocoSize; y < solucaoSize - blocoSize; y++){
         custoInsercao = (matrizAdj[solucao[y]][solucao[i]] + matrizAdj[solucao[i+blocoSize-1]][solucao[y+1]]) - matrizAdj[solucao[y]][solucao[y+1]];
 
         if((custoRetirada + custoInsercao) < deltaCusto){
@@ -348,7 +420,6 @@ int reinsertion(vector<int> &solucao, int blocoSize, int custoDaSolucaoAnterior)
         solucao.erase(solucao.begin() + insercao.posVertice);
       } else {
         solucao.insert(solucao.begin() + insercao.posInsercao, solucao.begin() + insercao.posVertice, solucao.begin() + insercao.posVertice + blocoSize);
-        //printSolucao(solucao, solucao.size());
         solucao.erase(solucao.begin() + insercao.posVertice, solucao.begin() + insercao.posVertice + blocoSize);
       }
 
@@ -360,6 +431,13 @@ int reinsertion(vector<int> &solucao, int blocoSize, int custoDaSolucaoAnterior)
     }
   }
 
+  //Benchmark
+  if(custoDaSolucao < custoDaSolucaoAnterior){
+    qtdMelhorasReinsercao++;
+  } 
+
+  tempoReinsercao += cpuTime() - tempoInicial;
+
   return custoDaSolucao;
 }
 
@@ -369,14 +447,15 @@ int swap(vector<int> &solucao, int custoDaSolucaoAnterior){
   int custoRetirada = 0;
   int custoInsercao = 0;
   int custoDaSolucao = custoDaSolucaoAnterior;
+  int solucaoSize = solucao.size();
+  double tempoInicial = cpuTime();
   bool flag = false;
-
   tSwap swap;
 
   while(1){
     //Aplica reinserção
-    for(size_t i = 1; i < solucao.size() - 3; i++){
-      for(size_t y = i+2; y < solucao.size()-1; y++){
+    for(size_t i = 1; i < solucaoSize - 3; i++){
+      for(size_t y = i+2; y < solucaoSize-1; y++){
         custoRetirada = matrizAdj[solucao[i-1]][solucao[i]] + matrizAdj[solucao[i]][solucao[i+1]] +
                         matrizAdj[solucao[y-1]][solucao[y]] + matrizAdj[solucao[y]][solucao[y+1]];
 
@@ -413,6 +492,13 @@ int swap(vector<int> &solucao, int custoDaSolucaoAnterior){
     }
   }
 
+  //Benchmark
+  if(custoDaSolucao < custoDaSolucaoAnterior){
+    qtdMelhorasSwap++;
+  } 
+
+  tempoSwap += cpuTime() - tempoInicial;
+
   return custoDaSolucao;
 }
 
@@ -423,15 +509,17 @@ int twoOptN(vector<int> &solucao, int custoDaSolucaoAnterior){
   int custoInsercao = 0;
   int custoDaSolucao = custoDaSolucaoAnterior;
   int aux = 0;
+  int solucaoSize = solucao.size();
+  int sizeSwap;
+  double tempoInicial = cpuTime();
   bool flag = false;
-
   tSwap swap;
 
   custoSolucao(&custoDaSolucao, solucao, dimension);
 
   while(1){
-    for(size_t i = 1; i < solucao.size() - 3; i++){
-      for(size_t y = i + 3; y < solucao.size(); y++){
+    for(size_t i = 1; i < solucaoSize - 3; i++){
+      for(size_t y = i + 3; y < solucaoSize; y++){
         custoRetirada = matrizAdj[solucao[i]][solucao[i+1]] + matrizAdj[solucao[y-1]][solucao[y]];
         custoInsercao = matrizAdj[solucao[i]][solucao[y-1]] + matrizAdj[solucao[i+1]][solucao[y]];
 
@@ -450,7 +538,8 @@ int twoOptN(vector<int> &solucao, int custoDaSolucaoAnterior){
     if(flag){
       custoDaSolucao = custoDaSolucao + deltaCusto;
 
-      for(size_t i = 0; i < (swap.pos2 - swap.pos1); i++){
+      sizeSwap = swap.pos2 - swap.pos1;
+      for(size_t i = 0; i < sizeSwap; i++){
         aux = solucao[swap.pos2];
         solucao.erase(solucao.begin() + swap.pos2);
         solucao.emplace(solucao.begin() + swap.pos1 + i, aux);
@@ -464,6 +553,13 @@ int twoOptN(vector<int> &solucao, int custoDaSolucaoAnterior){
     }
   }
 
+  //Benchmark
+  if(custoDaSolucao < custoDaSolucaoAnterior){
+    qtdMelhorasTwoOpt++;
+  } 
+
+  tempoTwoOpt+= cpuTime() - tempoInicial;
+
   return custoDaSolucao;
 }
 
@@ -475,6 +571,7 @@ int doubleBridge(vector<int> &solucao, int custoDaSolucaoAnterior){
   int custoInicial;
   int custoFinal;
   int deltaCusto;
+  double tempoInicial = cpuTime();
 
   custoInicial = matrizAdj[solucao[0]][solucao[1]] +
                   matrizAdj[solucao[sizeBlock]][solucao[sizeBlock + 1]] +
@@ -498,6 +595,8 @@ int doubleBridge(vector<int> &solucao, int custoDaSolucaoAnterior){
                 matrizAdj[solucao[sizeBlock*3]][solucao[sizeBlock*3 + 1]];
 
   deltaCusto = custoFinal - custoInicial;
+
+  tempoDoubleBridge += cpuTime() - tempoInicial;
 
   return custoDaSolucaoAnterior + deltaCusto;
 }
