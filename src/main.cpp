@@ -92,54 +92,56 @@ int main(int argc, char** argv){
     int maxIls = (dimension > 150) ? dimension/2 : dimension; 
     double tempoInicial;
 
-    // for(int i = 0; i < 10; i++){
-    //   tempoInicial = cpuTime();
+    for(int i = 0; i < 10; i++){
+      tempoInicial = cpuTime();
 
-    //   custoSoluca = gilsRvnd(solucao, 50, maxIls);
+      custoSoluca = gilsRvnd(solucao, 50, maxIls);
 
-    //   cout << "Custo: " << custoSoluca << endl;
-    //   cout << "Tempo total: " << cpuTime() - tempoInicial << endl;
-    //   cout << "Tempo das reinsercoes: " << tempoTotalReinsercao << endl;
-    //   cout << "Tempo dos swaps: " << tempoTotalSwap << endl;
-    //   cout << "Tempo dos two opt n: " << tempoTotalTwoOpt<< endl;
-    //   cout << "Tempo dos double bridges: " << tempoTotalDoubleBridge << endl;
+      cout << "Custo: " << custoSoluca << endl;
+      cout << "Tempo total: " << cpuTime() - tempoInicial << endl;
+      cout << "Tempo das reinsercoes: " << tempoTotalReinsercao << endl;
+      cout << "Tempo dos swaps: " << tempoTotalSwap << endl;
+      cout << "Tempo dos two opt n: " << tempoTotalTwoOpt<< endl;
+      cout << "Tempo dos double bridges: " << tempoTotalDoubleBridge << endl;
 
-    //   tempoTotalReinsercao = 0;
-    //   tempoTotalDoubleBridge = 0;
-    //   tempoTotalSwap = 0;
-    //   tempoTotalTwoOpt = 0;
+      tempoTotalReinsercao = 0;
+      tempoTotalDoubleBridge = 0;
+      tempoTotalSwap = 0;
+      tempoTotalTwoOpt = 0;
 
-    //   tempoInicial = 0;
+      tempoInicial = 0;
 
-    //   cout << endl;
-    // }
-
-    // printSolucao(solucao, dimension);
-
-    //Declara variáveis do método construtivo
-    random_device rd;
-    mt19937 mt(rd());
-    uniform_real_distribution<float> linear_f1(0.0, 0.5);
-    int coleta = 1;
-    int deposito = 1;
-    float alpha = 0.0;
-
-    //Gera solução inicial
-    alpha = linear_f1(mt);
-    
-    custoSoluca = construtivo(solucao, coleta, deposito, alpha);
-    //printSolucao(solucao, dimension);
-
-    custoSoluca = reinsertion(solucao, 3, custoSoluca);
-    //printSolucao(solucao, dimension);
+      cout << endl;
+    }
 
     printSolucao(solucao, dimension);
-    custoSolucao(&custo, solucao, solucao.size());
-    cout << "Custo: " << custoSoluca << " - Testado: " << custo << endl;
 
-    benchmark["tempo"] = cpuTime() - tempoInicial;
+    // //Declara variáveis do método construtivo
+    // random_device rd;
+    // mt19937 mt(rd());
+    // uniform_real_distribution<float> linear_f1(0.0, 0.5);
+    // int coleta = 1;
+    // int deposito = 1;
+    // float alpha = 0.0;
+
+    // //Gera solução inicial
+    // while(1){
+    //   alpha = linear_f1(mt);
+    //   custoSoluca = construtivo(solucao, coleta, deposito, alpha);
+    //   printSolucao(solucao, dimension);
+
+    //   custoSoluca = reinsertion(solucao, 3, custoSoluca);
+    //   printSolucao(solucao, dimension);
+
+    //   custoSolucao(&custo, solucao, solucao.size());
+    //   cout << "Custo: " << custoSoluca << " - Testado: " << custo << endl;
+
+    //   if(custoSoluca != custo) break;
+    // }
 
     //Benchmark
+    benchmark["tempo"] = cpuTime() - tempoInicial;
+
     string arquivo = argv[1];
     string instancia;
     string barra ("/");
@@ -188,6 +190,8 @@ int construtivo(vector<int> &solucao, int coleta, int deposito, float alpha){
   tInsercao insercao;
 
   //Adiciona coleta ao vector
+  solucao.clear();
+
   solucao.push_back(coleta);
 
   // Gera lista de vertices faltantes
@@ -319,7 +323,10 @@ int rvnd(vector<int> &solucao, int custoDaSolucaoAnterior){
       vizinhanca.erase(vizinhanca.begin() + random);
     }
 
-    if(vizinhanca.size() == 0) break;
+    //printSolucao(solucao, solucao.size());
+    //cout << novoCusto << endl;
+
+    if(vizinhanca.empty()) break;
   }
 
   return custoAnterior;
@@ -374,6 +381,7 @@ int gilsRvnd(vector<int> &solucaoFinal, int Imax, int Iils){
         //Zera o iterador
         interILS = 0;
       }
+      
 
       //Pertuba a solução
       custoParcial = doubleBridge(solucaoParcial, custoParcial);
@@ -432,6 +440,8 @@ int gilsRvnd(vector<int> &solucaoFinal, int Imax, int Iils){
 // Vizinhanças
 int reinsertion(vector<int> &solucao, int blocoSize, int custoDaSolucaoAnterior){
   // Inicia variáveis
+  vector<int> aux;
+
   int deltaCusto = 0;
   int custoRetirada = 0;
   int custoInsercao = 0;
@@ -439,20 +449,23 @@ int reinsertion(vector<int> &solucao, int blocoSize, int custoDaSolucaoAnterior)
   int solucaoSize = solucao.size();
   int iterSize = solucaoSize - blocoSize;
   double tempoInicial = cpuTime();
-  bool flag = false;
+  bool flag = false, flag2 = false;
   tReinsercao insercao;
 
   qtdReinsercoes++;
 
   //Procura local de melhor reinserção
-  for(size_t i = 1; i < iterSize; i++){
+  for(size_t i = 1; i < iterSize; i++){ 
     custoRetirada = matrizAdj[solucao[i-1]][solucao[i+blocoSize]] - (matrizAdj[solucao[i-1]][solucao[i]] + matrizAdj[solucao[i+blocoSize-1]][solucao[i+blocoSize]]);
 
-    for(size_t y = i+blocoSize; y < iterSize; y++){
+    for(size_t y = 0; y < solucaoSize - 1; y++){
+      if(y <= i + blocoSize - 1 && y >= i - 1) continue;
       custoInsercao = (matrizAdj[solucao[y]][solucao[i]] + matrizAdj[solucao[i+blocoSize-1]][solucao[y+1]]) - matrizAdj[solucao[y]][solucao[y+1]];
-
+      //cout << i << " " << y << endl;
       if((custoRetirada + custoInsercao) < deltaCusto){
-        flag = true;
+        //cout << i << " - " << y << endl;
+        if(i < (y+1)) flag = false;
+        else flag = true;
 
         deltaCusto = custoInsercao + custoRetirada;
         insercao.posVertice = i;
@@ -460,25 +473,113 @@ int reinsertion(vector<int> &solucao, int blocoSize, int custoDaSolucaoAnterior)
         insercao.vertice = solucao[i];
       }
     }
+
+    // for(size_t y = i + blocoSize; y < solucaoSize - 1; y++){
+    //   custoInsercao = (matrizAdj[solucao[y]][solucao[i]] + matrizAdj[solucao[i+blocoSize-1]][solucao[y+1]]) - matrizAdj[solucao[y]][solucao[y+1]];
+    //   //cout << custoInsercao << endl;
+    //   if((custoRetirada + custoInsercao) < deltaCusto){
+    //     flag = true;
+    //     flag2 = false;
+        
+    //     deltaCusto = custoInsercao + custoRetirada;
+    //     insercao.posVertice = i;
+    //     insercao.posInsercao = y+1;
+    //     insercao.vertice = solucao[i];
+    //     cout << "for1" << endl;
+    //   }
+    // }
+
+    // for(int y = i - 2; y >= 0; y--){
+    //   custoInsercao = (matrizAdj[solucao[y]][solucao[i]] + matrizAdj[solucao[i+blocoSize-1]][solucao[y+1]]) - matrizAdj[solucao[y]][solucao[y+1]];
+      
+    //   if((custoRetirada + custoInsercao) < deltaCusto){
+    //     //cout << custoRetirada + custoInsercao << endl;
+    //     flag = true;
+    //     flag2 = true;
+    //     //cout << "Entrou" << endl;
+    //     deltaCusto = custoInsercao + custoRetirada;
+    //     insercao.posVertice = i;
+    //     insercao.posInsercao = y+1;
+    //     insercao.vertice = solucao[i];
+    //     cout << "for2" << endl;
+    //   }
+    // }
   }
 
   //Aplica reinserção
   if(flag){
     custoDaSolucao = custoDaSolucao + deltaCusto;
+    //cout << insercao.posVertice << " " << insercao.posInsercao << " " << blocoSize; 
 
-    if(blocoSize == 1){
-      solucao.insert(solucao.begin() + insercao.posInsercao, solucao[insercao.posVertice]);
+    //printSolucao(solucao, solucao.size());
+
+    for(size_t i = 0; i < blocoSize; i++){
+      aux.push_back(solucao[insercao.posVertice]);
       solucao.erase(solucao.begin() + insercao.posVertice);
-    } else {
-      solucao.insert(solucao.begin() + insercao.posInsercao, solucao.begin() + insercao.posVertice, solucao.begin() + insercao.posVertice + blocoSize);
-      solucao.erase(solucao.begin() + insercao.posVertice, solucao.begin() + insercao.posVertice + blocoSize);
     }
 
+    if(insercao.posInsercao > insercao.posVertice) insercao.posInsercao -= blocoSize; 
+
+    solucao.insert(solucao.begin() + insercao.posInsercao, aux.begin(), aux.begin() + aux.size());
+
+    //printSolucao(solucao, solucao.size());
+    //printSolucao(aux, aux.size());
+
+    // if(blocoSize == 1){
+    //   if(!flag){
+    //     solucao.insert(solucao.begin() + insercao.posInsercao, solucao[insercao.posVertice]);
+    //     solucao.erase(solucao.begin() + insercao.posVertice);
+    //   } else {
+    //     solucao.insert(solucao.begin() + insercao.posInsercao, solucao[insercao.posVertice]);
+    //     solucao.erase(solucao.begin() + insercao.posVertice + blocoSize);
+    //   }
+
+    // } else {
+    //   if(!flag){
+
+    //   } else {
+
+    //   }
+    // }
+
+    // if(blocoSize == 1 && flag2 == false){
+    //   solucao.insert(solucao.begin() + insercao.posInsercao, solucao[insercao.posVertice]);
+    //   solucao.erase(solucao.begin() + insercao.posVertice);
+    // } else if(flag2 == false) {
+    //   solucao.insert(solucao.begin() + insercao.posInsercao, solucao.begin() + insercao.posVertice, solucao.begin() + insercao.posVertice + blocoSize);
+    //   solucao.erase(solucao.begin() + insercao.posVertice, solucao.begin() + insercao.posVertice + blocoSize);
+    // }
+    // //cout << "Eita: " << flag2 << endl;
+    // if(blocoSize == 1 && flag2 == true){
+    //   solucao.insert(solucao.begin() + insercao.posInsercao, solucao[insercao.posVertice]);
+    //   solucao.erase(solucao.begin() + insercao.posVertice + blocoSize);
+    // } else if(flag2 == true) {
+    //   printSolucao(solucao, solucao.size());  
+    //   cout << solucao[insercao.posVertice] << " " << solucao[insercao.posVertice + blocoSize] << endl;
+    //   solucao.insert(solucao.begin() + insercao.posInsercao, solucao.begin() + insercao.posVertice + blocoSize, solucao.begin() + insercao.posVertice + blocoSize + blocoSize);
+    //   printSolucao(solucao, solucao.size());
+    //   solucao.erase(solucao.begin() + insercao.posVertice + blocoSize, solucao.begin() + insercao.posVertice + (blocoSize*2));
+    // }
+
+    //cout << deltaCusto << endl; 
+    
+    //cout << insercao.posVertice << " " << insercao.posInsercao <<  " " << flag2 << " " << insercao.posVertice + blocoSize << endl; 
+
+    // if(custoDaSolucao < 3323){
+    //   printSolucao(solucao, solucao.size());
+    //   cout <<  custoDaSolucao << endl; 
+    //   cout << flag2 << endl;
+
+    //   return 0;
+    // }
+    
+
     flag = false;
+    flag2 = false;
     deltaCusto = 0;
 
   } 
-
+  
   //Benchmark
   if(custoDaSolucao < custoDaSolucaoAnterior){
     qtdMelhorasReinsercao++;
