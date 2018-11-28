@@ -654,11 +654,18 @@ int doubleBridge(vector<int> &solucao, int custoDaSolucaoAnterior){
 int doubleBridge2(vector<int> &solucao, int custoDaSolucaoAnterior){
   random_device rd;
   mt19937 mt(rd());
-  int sizeBlock = (solucao.size() - 2) / 3;
+  int sizeBlock;
 
-  uniform_int_distribution<int> linear_i(1, sizeBlock);
+  if(dimension > 20){
+    sizeBlock = dimension / 4;
+  } else {
+    uniform_int_distribution<int> linear_i(2, dimension / 10);
+    
+    sizeBlock = linear_i(mt);
+  }
+  
+  uniform_int_distribution<int> linear_b(1, sizeBlock);
   uniform_int_distribution<int> linear_p1(1, solucao.size() - sizeBlock - 1);
-  uniform_int_distribution<int> linear_p2(((solucao.size() - 2)/2) + 1, solucao.size() - 1 - sizeBlock);
 
   int bloco1 = linear_i(mt), bloco2 = linear_i(mt);
   int pos1 = linear_p1(mt), pos2;
