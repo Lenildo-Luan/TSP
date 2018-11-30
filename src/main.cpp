@@ -80,65 +80,70 @@ int twoOptN(vector<int> &solucao, int custoDaSolucaoAnterior);
 //Pertubações
 int doubleBridge(vector<int> &solucao, int custoDaSolucaoAnterior);
 int doubleBridge2(vector<int> &solucao, int custoDaSolucaoAnterior);
+int arnandoBridge(int N, vector<int> &solucaoTop, vector<int> &solucaoILS, int *indexFirstTimeInicio, int *indexFirstTimeFinal);
 
 //MAIN
 int main(int argc, char** argv){
-    readData(argc, argv, &dimension, &matrizAdj);
-    //printData();
+  readData(argc, argv, &dimension, &matrizAdj);
+  //printData();
 
-    vector<int> solucao;
-    
-    int custoSoluca, custo;
-    int flag = 0;
-    int maxIls = (dimension > 150) ? dimension/2 : dimension; 
-    double tempoInicial;
+  vector<int> solucao;
+  vector<int> arnandoSolucao;
+  int arnando1 = 0, arnando2 = 0;
+  
+  int custoSoluca, custo;
+  int flag = 0;
+  int maxIls = (dimension > 150) ? dimension/2 : dimension; 
+  double tempoInicial;
 
-    //for(size_t i = 0; i < 10; i++){
-      // tempoInicial = cpuTime();
+  for(size_t i = 0; i < 10; i++){
+    tempoInicial = cpuTime();
 
-      // custoSoluca = gilsRvnd(solucao, 50, maxIls);
+    custoSoluca = gilsRvnd(solucao, 50, maxIls);
 
-      // cout << "Custo: " << custoSoluca << endl;
-      // cout << "Tempo total: " << cpuTime() - tempoInicial << endl;
-      // cout << "Tempo das reinsercoes: " << tempoTotalReinsercao << endl;
-      // cout << "Tempo dos swaps: " << tempoTotalSwap << endl;
-      // cout << "Tempo dos two opt n: " << tempoTotalTwoOpt<< endl;
-      // cout << "Tempo dos double bridges: " << tempoTotalDoubleBridge << endl;
+    cout << "Custo: " << custoSoluca << endl;
+    cout << "Tempo total: " << cpuTime() - tempoInicial << endl;
+    cout << "Tempo das reinsercoes: " << tempoTotalReinsercao << endl;
+    cout << "Tempo dos swaps: " << tempoTotalSwap << endl;
+    cout << "Tempo dos two opt n: " << tempoTotalTwoOpt<< endl;
+    cout << "Tempo dos double bridges: " << tempoTotalDoubleBridge << endl;
 
-      // tempoTotalReinsercao = 0;
-      // tempoTotalDoubleBridge = 0;
-      // tempoTotalSwap = 0;
-      // tempoTotalTwoOpt = 0;
+    tempoTotalReinsercao = 0;
+    tempoTotalDoubleBridge = 0;
+    tempoTotalSwap = 0;
+    tempoTotalTwoOpt = 0;
 
-      // tempoInicial = 0;
+    tempoInicial = 0;
 
-      // cout << endl;
-    //}
+    cout << endl;
 
-    //Declara variáveis do método construtivo
-    random_device rd;
-    mt19937 mt(rd());
-    uniform_real_distribution<float> linear_f1(0.0, 0.5);
-    int coleta = 1;
-    int deposito = 1;
-    float alpha = 0.0;
+    break;
+  }
 
-    //Gera solução inicial
-    while(1){
-      alpha = linear_f1(mt);
-      custoSoluca = construtivo(solucao, coleta, deposito, alpha);
-      printSolucao(solucao, dimension);
+    // //Declara variáveis do método construtivo
+    // random_device rd;
+    // mt19937 mt(rd());
+    // uniform_real_distribution<float> linear_f1(0.0, 0.5);
+    // int coleta = 1;
+    // int deposito = 1;
+    // float alpha = 0.0;
 
-      custoSoluca = doubleBridge2(solucao, custoSoluca);
-      printSolucao(solucao, dimension);
+    // //Gera solução inicial
+    // while(1){
+    //   alpha = linear_f1(mt);
+    //   custoSoluca = construtivo(solucao, coleta, deposito, alpha);
+    //   printSolucao(solucao, dimension);
 
-      custoSolucao(&custo, solucao, solucao.size());
-      cout << "Custo: " << custoSoluca << " - Testado: " << custo << endl;
+    //   arnandoSolucao = solucao;
 
-      if(custoSoluca != custo) break;
+    //   custoSoluca = arnandoBridge(dimension, solucao, arnandoSolucao, &arnando1, &arnando2);
+    //   printSolucao(solucao, dimension);
 
-      break;
-    }
+    //   custoSolucao(&custo, solucao, solucao.size());
+    //   cout << "Custo: " << custoSoluca << " - Testado: " << custo << endl;
+
+    //   if(custoSoluca != custo) break;
+    // }
 
     //Benchmark
     benchmark["tempo"] = cpuTime() - tempoInicial;
@@ -341,6 +346,7 @@ int gilsRvnd(vector<int> &solucaoFinal, int Imax, int Iils){
 
   vector<int> solucaoParcial;
   vector<int> solucaoMelhor;
+  vector<int> solucaoArnando;
 
   int custoFinal = INT32_MAX;
   int custoParcial = 0;
@@ -349,6 +355,7 @@ int gilsRvnd(vector<int> &solucaoFinal, int Imax, int Iils){
   int deposito = 1;
   int interILS;
   int solucaoSize;
+  int arnando1 = 0, arnando2 = 0;
   float alpha = 0.0;
 
   //Busca Melhor Solução
@@ -365,6 +372,7 @@ int gilsRvnd(vector<int> &solucaoFinal, int Imax, int Iils){
     //Registra a solução parcial como melhor solução
     custoMelhor = custoParcial;
     solucaoMelhor = solucaoParcial;
+    solucaoArnando = solucaoParcial;
 
     //Busca o melhor ótimo local a partir da solução encontrada no construtivo
     while(interILS < Iils){
@@ -383,10 +391,16 @@ int gilsRvnd(vector<int> &solucaoFinal, int Imax, int Iils){
         interILS = 0;
       }
       
-
       //Pertuba a solução
-      custoParcial = doubleBridge(solucaoParcial, custoParcial);
-
+      //custoParcial = doubleBridge(solucaoParcial, custoParcial);
+      solucaoParcial = solucaoMelhor;
+      custoParcial = custoMelhor;
+      custoParcial = doubleBridge2(solucaoParcial, custoParcial);
+      // arnando1 = 0, arnando2 = 0;
+      // solucaoArnando = solucaoParcial;
+      // arnandoBridge(dimension, solucaoParcial, solucaoArnando, &arnando1, &arnando2);
+      //custoSolucao(&custoParcial,  solucaoParcial,  solucaoParcial.size());
+     
       //Soma o interador
       interILS++;
     }
@@ -456,7 +470,7 @@ int reinsertion(vector<int> &solucao, int blocoSize, int custoDaSolucaoAnterior)
     custoRetirada = matrizAdj[solucao[i-1]][solucao[i+blocoSize]] - (matrizAdj[solucao[i-1]][solucao[i]] + matrizAdj[solucao[i+blocoSize-1]][solucao[i+blocoSize]]);
 
     for(size_t y = 0; y < solucaoSize - 1; y++){
-      if(y <= i + blocoSize - 1 && y >= i - 1) continue;
+      if(y >= (i-1) && y <= i + blocoSize) continue;
 
       custoInsercao = (matrizAdj[solucao[y]][solucao[i]] + matrizAdj[solucao[i+blocoSize-1]][solucao[y+1]]) - matrizAdj[solucao[y]][solucao[y+1]];
 
@@ -507,18 +521,13 @@ int swap(vector<int> &solucao, int custoDaSolucaoAnterior){
   tSwap swap;
 
   //Aplica reinserção
-  for(size_t i = 1; i < solucaoSize - 3; i++){
+  for(size_t i = 1; i < solucaoSize; i++){
     for(size_t y = i+2; y < solucaoSize - 1; y++){
-      // if(y == i+1){
-      //   custoRetirada = matrizAdj[solucao[i-1]][solucao[y+1]] - (matrizAdj[solucao[i-1]][solucao[i]] + matrizAdj[solucao[i]][solucao[y]] + matrizAdj[solucao[y]][solucao[y+1]]);
-      //   custoInsercao = (matrizAdj[solucao[i-1]][solucao[y]] + matrizAdj[solucao[y]][solucao[i]] + matrizAdj[solucao[i]][solucao[y+1]]) - matrizAdj[solucao[i-1]][solucao[y+1]];
-      // } else {
-        custoRetirada = matrizAdj[solucao[i-1]][solucao[i]] + matrizAdj[solucao[i]][solucao[i+1]] +
-                        matrizAdj[solucao[y-1]][solucao[y]] + matrizAdj[solucao[y]][solucao[y+1]];
+      custoRetirada = matrizAdj[solucao[i-1]][solucao[i]] + matrizAdj[solucao[i]][solucao[i+1]] +
+                      matrizAdj[solucao[y-1]][solucao[y]] + matrizAdj[solucao[y]][solucao[y+1]];
 
-        custoInsercao = matrizAdj[solucao[i-1]][solucao[y]] + matrizAdj[solucao[y]][solucao[i+1]] +
-                        matrizAdj[solucao[y-1]][solucao[i]] + matrizAdj[solucao[i]][solucao[y+1]];
-     // }
+      custoInsercao = matrizAdj[solucao[i-1]][solucao[y]] + matrizAdj[solucao[y]][solucao[i+1]] +
+                      matrizAdj[solucao[y-1]][solucao[i]] + matrizAdj[solucao[i]][solucao[y+1]];
 
       if((custoInsercao - custoRetirada) < deltaCusto){
         flag = true;
@@ -566,8 +575,8 @@ int twoOptN(vector<int> &solucao, int custoDaSolucaoAnterior){
   bool flag = false;
   tSwap swap;
 
-  for(size_t i = 0; i < solucaoSize - 3; i++){
-    for(size_t y = i + 3; y < solucaoSize; y++){
+  for(size_t i = 0; i < solucaoSize; i++){
+    for(size_t y = i + 2; y < solucaoSize; y++){
       custoRetirada = matrizAdj[solucao[i]][solucao[i+1]] + matrizAdj[solucao[y-1]][solucao[y]];
       custoInsercao = matrizAdj[solucao[i]][solucao[y-1]] + matrizAdj[solucao[i+1]][solucao[y]];
 
@@ -653,71 +662,172 @@ int doubleBridge(vector<int> &solucao, int custoDaSolucaoAnterior){
 
 int doubleBridge2(vector<int> &solucao, int custoDaSolucaoAnterior){
   random_device rd;
-  mt19937 mt(rd());
-  int sizeBlock;
+  mt19937_64 mt(rd());
+  uniform_int_distribution<int> linear_bme20(2, dimension / 3);
+  uniform_int_distribution<int> linear_bma20(2, dimension / 10);
 
-  if(dimension > 20){
-    sizeBlock = dimension / 4;
-  } else {
-    uniform_int_distribution<int> linear_i(2, dimension / 10);
-    
-    sizeBlock = linear_i(mt);
-  }
-  
-  uniform_int_distribution<int> linear_b(1, sizeBlock);
-  uniform_int_distribution<int> linear_p1(1, solucao.size() - sizeBlock - 1);
+  vector<int> aux1, aux2;
 
-  int bloco1 = linear_i(mt), bloco2 = linear_i(mt);
-  int pos1 = linear_p1(mt), pos2;
-  int custoInicial;
-  int custoFinal;
-  int deltaCusto = 0;
-  int aux;
+  int bloco1, bloco2;
+  int pos1, pos2;
+  int custoInicial, custoFinal, deltaCusto = 0;
   double tempoInicial = cpuTime();
 
+  // if(dimension < 20){
+    bloco1 = linear_bme20(mt);
+    bloco2 = linear_bme20(mt);
+  // } else {
+  //   bloco1 = linear_bma20(mt);
+  //   bloco2 = linear_bma20(mt);
+  // }
+  
+  uniform_int_distribution<int> linear_p1(1, solucao.size() - bloco1 - 1);
+  uniform_int_distribution<int> linear_p2(1, solucao.size() - bloco2 - 1);
+
   while(1){
-    pos2 = linear_p1(mt);
+    pos1 = linear_p1(mt);
+    pos2 = linear_p2(mt);
 
-    if((pos2 < pos1 && pos1 > bloco2) || (pos2 > pos1 && (solucao.size() - pos1) > bloco2 )) break;
-  }
-
-   cout << pos1 << " " << pos2 << " " << sizeBlock << endl;
-
-  if((pos1 + bloco1 + 1 == pos2) || (pos1 - bloco2) == pos2){
-    cout << "EITA" << endl;
-    custoInicial = (matrizAdj[solucao[pos1 - 1]][solucao[pos2 + bloco2]]) - 
-                   (matrizAdj[solucao[pos1 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos1 + bloco1]] + 
-                    matrizAdj[solucao[pos2 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos2 + bloco2]]);
-
-    custoFinal =(matrizAdj[solucao[pos1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos1]][solucao[pos2 + bloco2 - 1]] + 
-                 matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2 + bloco2]]) - (matrizAdj[solucao[pos1 - 1]][solucao[pos2 + bloco2]]);
-  } else {
-    custoInicial = (matrizAdj[solucao[pos1 - 1]][solucao[pos1 + bloco1]] + matrizAdj[solucao[pos2 - 1]][solucao[pos2 + bloco2]]) - 
-                   (matrizAdj[solucao[pos1 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos1 + bloco1]] + 
-                    matrizAdj[solucao[pos2 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos2 + bloco2]]);
-
-    custoFinal =(matrizAdj[solucao[pos1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos1 + bloco1]] + 
-                 matrizAdj[solucao[pos2 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2 + bloco2]]) - 
-                (matrizAdj[solucao[pos1 - 1]][solucao[pos1 + bloco1]] + matrizAdj[solucao[pos2 - 1]][solucao[pos2 + bloco2]]);
+    if((pos2 <= (pos1 - bloco2) && pos1 > bloco2) || (pos2 >= (pos1 + bloco1) && ((solucao.size() - 1) - pos1 - (bloco1 - 1)) > bloco2)) break;
   }
 
   for(size_t i = 0; i < bloco1; i++){
-    aux = solucao[pos1];
-    solucao.emplace(solucao.begin() + pos2, aux);
-    solucao.erase(solucao.begin() + pos1);
+    aux1.push_back(solucao[pos1 + i]);
   }
 
   for(size_t i = 0; i < bloco2; i++){
-    aux = solucao[pos2 + i];
-    solucao.erase(solucao.begin() + pos2 + i);
-    solucao.emplace(solucao.begin() + pos1 + i, aux);
+    aux2.push_back(solucao[pos2 + i]);
   }
 
-  deltaCusto = custoFinal + custoInicial;
+  // cout << endl;
+  // cout << pos1 << " " << bloco1 << " " << solucao[pos1] << endl << pos2 << " " << bloco2 << " " << solucao[pos2];
+  // cout << endl;
+
+  if(pos1 > pos2){
+    if((pos1 - bloco2) == pos2){
+      deltaCusto = (matrizAdj[solucao[pos2 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos1 + bloco1]]) -
+                  (matrizAdj[solucao[pos2 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos1 + bloco1]]);
+    } else {
+      custoInicial = (matrizAdj[solucao[pos1 - 1]][solucao[pos1 + bloco1]] + matrizAdj[solucao[pos2 - 1]][solucao[pos2 + bloco2]]) - 
+                    (matrizAdj[solucao[pos1 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos1 + bloco1]] + 
+                      matrizAdj[solucao[pos2 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos2 + bloco2]]);
+
+      custoFinal =(matrizAdj[solucao[pos1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos1 + bloco1]] + 
+                  matrizAdj[solucao[pos2 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2 + bloco2]]) - 
+                  (matrizAdj[solucao[pos1 - 1]][solucao[pos1 + bloco1]] + matrizAdj[solucao[pos2 - 1]][solucao[pos2 + bloco2]]);
+
+      deltaCusto = custoFinal + custoInicial;
+    }
+
+    solucao.erase(solucao.begin() + pos2, solucao.begin() + pos2 + (bloco2));
+    solucao.insert(solucao.begin() + pos2, aux1.begin(), aux1.begin() + aux1.size());
+
+    solucao.erase(solucao.begin() + pos1 + (bloco1 - bloco2), solucao.begin() + pos1 + (bloco1 - bloco2) + (bloco1));
+    solucao.insert(solucao.begin() + pos1 + (bloco1 - bloco2), aux2.begin(), aux2.begin() + aux2.size());
+
+  } else {
+    if(pos1 + bloco1 == pos2){
+      deltaCusto = (matrizAdj[solucao[pos1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2 + bloco2]]) -
+                  (matrizAdj[solucao[pos1 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos2 + bloco2]]);
+    
+    } else {
+      custoInicial = (matrizAdj[solucao[pos1 - 1]][solucao[pos1 + bloco1]] + matrizAdj[solucao[pos2 - 1]][solucao[pos2 + bloco2]]) - 
+                    (matrizAdj[solucao[pos1 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos1 + bloco1]] + 
+                      matrizAdj[solucao[pos2 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos2 + bloco2]]);
+
+      custoFinal =(matrizAdj[solucao[pos1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos1 + bloco1]] + 
+                  matrizAdj[solucao[pos2 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2 + bloco2]]) - 
+                  (matrizAdj[solucao[pos1 - 1]][solucao[pos1 + bloco1]] + matrizAdj[solucao[pos2 - 1]][solucao[pos2 + bloco2]]);
+
+      deltaCusto = custoFinal + custoInicial;
+    }
+
+    solucao.erase(solucao.begin() + pos1, solucao.begin() + pos1 + (bloco1));
+    solucao.insert(solucao.begin() + pos1, aux2.begin(), aux2.begin() + aux2.size());
+
+    solucao.erase(solucao.begin() + pos2 + (bloco2 - bloco1), solucao.begin() + pos2 + (bloco2 - bloco1) + (bloco2));
+    solucao.insert(solucao.begin() + pos2 + (bloco2 - bloco1), aux1.begin(), aux1.begin() + aux1.size());
+  }
+
+  //deltaCusto = custoFinal + custoInicial;
 
   tempoDoubleBridge += cpuTime() - tempoInicial;
 
   return custoDaSolucaoAnterior + deltaCusto;
+}
+
+int arnandoBridge(int N, vector<int> &solucaoTop, vector<int> &solucaoILS, int *indexFirstTimeInicio, int *indexFirstTimeFinal){
+  int posicaoAleatoria1, posicaoAleatoria2, posicaoAleatoria3, posicaoAleatoria4;
+  int custo = 0;
+
+  //int length = (N)/25;
+  int length = N/10;
+
+  posicaoAleatoria1 = 1 + rand() % (N-2);
+
+  if (posicaoAleatoria1  < N - 2 - length) {
+    posicaoAleatoria2 = posicaoAleatoria1 + 1 + rand() % (length-1);
+  }
+
+  else {
+    posicaoAleatoria2 = posicaoAleatoria1 + 1 + rand() % (N+1 - posicaoAleatoria1 - 2);
+  }
+
+  while (true) {
+    posicaoAleatoria3 = 1 + rand() % (N - 2);
+
+    if (posicaoAleatoria3  < N - 2 - length) {
+      posicaoAleatoria4 = posicaoAleatoria3 + 1 + rand() % (length-1);
+    }
+
+    else {
+      posicaoAleatoria4 = posicaoAleatoria3 + 1 + rand() % (N + 1 - posicaoAleatoria3 - 2);
+    }
+
+    if ((posicaoAleatoria4 < posicaoAleatoria1) || (posicaoAleatoria3 > posicaoAleatoria2)) {
+      break;
+    }
+  }
+
+  int ponto1, ponto2, ponto3, ponto4;
+  if (posicaoAleatoria1 < posicaoAleatoria3) {
+    ponto1 = posicaoAleatoria1;
+    ponto2 = posicaoAleatoria2;
+    ponto3 = posicaoAleatoria3;
+    ponto4 = posicaoAleatoria4;
+  }
+
+  else {
+    ponto1 = posicaoAleatoria3;
+    ponto2 = posicaoAleatoria4;
+    ponto3 = posicaoAleatoria1;
+    ponto4 = posicaoAleatoria2;
+  }
+
+  // Executar a troca das duas particoes (emprestado de Bruno)
+
+  int tampart1 = ponto2 - ponto1 + 1; // tamanho particao 1
+  int tampart2 =  ponto4 - ponto3 + 1; // tamanho particao 2
+
+  for (int i = 0 ; i < tampart2 ; i++) {
+    solucaoTop[ponto1 + i] = solucaoILS[ponto3 + i]; 
+  }
+
+  for (int i = 0 ; i < ponto3-ponto2-1; i++) {
+    solucaoTop[ponto1 + tampart2 + i] = solucaoILS[ponto2 +1 + i];
+  }
+
+
+  for (int i = 0 ; i < tampart1; i++)	{
+    solucaoTop[ponto1 + tampart2 + ponto3 - ponto2 - 1 + i] = solucaoILS[ponto1 + i];
+  }
+
+  *indexFirstTimeInicio = ponto1;
+  *indexFirstTimeFinal = ponto4;
+
+  //custoSolucao(&custo, solucaoTop, solucaoTop.size());
+
+  return custo;
 }
 
 // Untils
