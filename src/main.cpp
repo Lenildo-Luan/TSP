@@ -116,8 +116,6 @@ int main(int argc, char** argv){
     tempoInicial = 0;
 
     cout << endl;
-
-    break;
   }
 
     // //Declara variáveis do método construtivo
