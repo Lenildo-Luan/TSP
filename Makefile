@@ -25,7 +25,7 @@ CPLEXLIBDIR   = $(CPLEXDIR)/lib/$(SYSTEM)/$(LIBFORMAT)
 CONCERTLIBDIR = $(CONCERTDIR)/lib/$(SYSTEM)/$(LIBFORMAT)
 
 #### define o compilador
-CPPC = g++
+CPPC = g++-7
 #############################
 
 #### opcoes de compilacao e includes
