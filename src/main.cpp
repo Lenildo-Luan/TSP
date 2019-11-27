@@ -36,31 +36,6 @@ typedef struct{
 double ** matrizAdj; // matriz de adjacencia
 int dimension; // quantidade total de vertices
 
-//Benchmark
-json benchmarkReinsercao; // Json
-json benchmarkSwap; // Json
-json benchmarkTwoOpt; // Json
-json benchmarkDoubleBridge; // Json
-json benchmark; // Json
-
-int qtdMelhorasReinsercao = 0;
-int qtdReinsercoes = 0;
-double tempoTotalReinsercao = 0;
-double tempoReinsercao = 0;
-
-int qtdMelhorasSwap = 0;
-double tempoTotalSwap = 0;
-double tempoSwap = 0;
-
-int qtdMelhorasTwoOpt = 0;
-double tempoTotalTwoOpt = 0;
-double tempoTwoOpt = 0;
-
-int qtdMelhorasDoubleBridge = 0;
-double tempoTotalDoubleBridge = 0;
-double tempoDoubleBridge = 0;
-//
-
 // Untils
 void printData(); // Mostra matriz de adjacencia
 void printSolucao(vector<int> &solucao, int tamanhoArray); // Mostra a solução inicial gerada pel algorítimo escolhido
@@ -180,13 +155,6 @@ int construtivo(vector<int> &sol, int depot, float alpha){
   }
 
   return costSol;
-
-  // // Mostra solução
-  // for (size_t i = 0; i < solucao.size(); i++){
-  //   cout << solucao[i] << " ";
-  //   //cout << solucaoInicial[i] << " ";
-  // }
-
 }
 
 int rvnd(vector<int> &currentSol, int currentCost){
@@ -331,8 +299,6 @@ int reinsertion(vector<int> &sol, int subseqSize, int cost){
     retreatCost = matrizAdj[sol[i-1]][sol[i+subseqSize]] - (matrizAdj[sol[i-1]][sol[i]] + matrizAdj[sol[i+subseqSize-1]][sol[i+subseqSize]]);
 
     for(size_t y = 0; y < i - 1; y++){
-      //if(y >= (i-1) && y <= i + subseqSize) continue;
-
       insertionCost = (matrizAdj[sol[y]][sol[i]] + matrizAdj[sol[i+subseqSize-1]][sol[y+1]]) - matrizAdj[sol[y]][sol[y+1]];
 
       if((retreatCost + insertionCost) < deltaCost){
@@ -346,8 +312,6 @@ int reinsertion(vector<int> &sol, int subseqSize, int cost){
     }
 
     for(size_t y = i + subseqSize + 1; y < sizeSol - 1; y++){
-      //if(y >= (i-1) && y <= i + subseqSize) continue;
-
       insertionCost = (matrizAdj[sol[y]][sol[i]] + matrizAdj[sol[i+subseqSize-1]][sol[y+1]]) - matrizAdj[sol[y]][sol[y+1]];
 
       if((retreatCost + insertionCost) < deltaCost){
@@ -460,86 +424,86 @@ int twoOptN(vector<int> &sol, int cost){
 }
 
 //Pertubações
-int doubleBridge(vector<int> &solucao, int custoDaSolucaoAnterior){
+int doubleBridge(vector<int> &sol, int cost){
   random_device rd;
   mt19937_64 mt(rd());
   uniform_int_distribution<int> linear_bme20(2, dimension / 3);
   uniform_int_distribution<int> linear_bma20(2, dimension / 10);
 
-  vector<int> aux1, aux2;
+  vector<int> subSeq1, subSeq2;
 
-  int bloco1, bloco2;
-  int pos1, pos2;
-  int custoInicial, custoFinal, deltaCusto = 0;
+  int sizeSubSeq1, sizeSubSeq2;
+  int initSubSeq1, initSubSeq2;
+  int initialCost, finalCost, deltaCost = 0;
 
-  bloco1 = linear_bme20(mt);
-  bloco2 = linear_bme20(mt);
+  sizeSubSeq1 = linear_bme20(mt);
+  sizeSubSeq2 = linear_bme20(mt);
   
-  uniform_int_distribution<int> linear_p1(1, solucao.size() - bloco1 - 1);
-  uniform_int_distribution<int> linear_p2(1, solucao.size() - bloco2 - 1);
+  uniform_int_distribution<int> linear_p1(1, sol.size() - sizeSubSeq1 - 1);
+  uniform_int_distribution<int> linear_p2(1, sol.size() - sizeSubSeq2 - 1);
 
   while(1){
-    pos1 = linear_p1(mt);
-    pos2 = linear_p2(mt);
+    initSubSeq1 = linear_p1(mt);
+    initSubSeq2 = linear_p2(mt);
 
-    if((pos2 <= (pos1 - bloco2) && pos1 > bloco2) || (pos2 >= (pos1 + bloco1) && ((solucao.size() - 1) - pos1 - (bloco1 - 1)) > bloco2)) break;
+    if((initSubSeq2 <= (initSubSeq1 - sizeSubSeq2) && initSubSeq1 > sizeSubSeq2) || (initSubSeq2 >= (initSubSeq1 + sizeSubSeq1) && ((sol.size() - 1) - initSubSeq1 - (sizeSubSeq1 - 1)) > sizeSubSeq2)) break;
   }
 
-  for(size_t i = 0; i < bloco1; i++){
-    aux1.push_back(solucao[pos1 + i]);
+  for(size_t i = 0; i < sizeSubSeq1; i++){
+    subSeq1.push_back(sol[initSubSeq1 + i]);
   }
 
-  for(size_t i = 0; i < bloco2; i++){
-    aux2.push_back(solucao[pos2 + i]);
+  for(size_t i = 0; i < sizeSubSeq2; i++){
+    subSeq2.push_back(sol[initSubSeq2 + i]);
   }
 
-  if(pos1 > pos2){
-    if((pos1 - bloco2) == pos2){
-      deltaCusto = (matrizAdj[solucao[pos2 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos1 + bloco1]]) -
-                  (matrizAdj[solucao[pos2 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos1 + bloco1]]);
+  if(initSubSeq1 > initSubSeq2){
+    if((initSubSeq1 - sizeSubSeq2) == initSubSeq2){
+      deltaCost = (matrizAdj[sol[initSubSeq2 - 1]][sol[initSubSeq1]] + matrizAdj[sol[initSubSeq1 + sizeSubSeq1 - 1]][sol[initSubSeq2]] + matrizAdj[sol[initSubSeq2 + sizeSubSeq2 - 1]][sol[initSubSeq1 + sizeSubSeq1]]) -
+                  (matrizAdj[sol[initSubSeq2 - 1]][sol[initSubSeq2]] + matrizAdj[sol[initSubSeq2 + sizeSubSeq2 - 1]][sol[initSubSeq1]] + matrizAdj[sol[initSubSeq1 + sizeSubSeq1 - 1]][sol[initSubSeq1 + sizeSubSeq1]]);
     } else {
-      custoInicial = (matrizAdj[solucao[pos1 - 1]][solucao[pos1 + bloco1]] + matrizAdj[solucao[pos2 - 1]][solucao[pos2 + bloco2]]) - 
-                    (matrizAdj[solucao[pos1 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos1 + bloco1]] + 
-                      matrizAdj[solucao[pos2 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos2 + bloco2]]);
+      initialCost = (matrizAdj[sol[initSubSeq1 - 1]][sol[initSubSeq1 + sizeSubSeq1]] + matrizAdj[sol[initSubSeq2 - 1]][sol[initSubSeq2 + sizeSubSeq2]]) - 
+                    (matrizAdj[sol[initSubSeq1 - 1]][sol[initSubSeq1]] + matrizAdj[sol[initSubSeq1 + sizeSubSeq1 - 1]][sol[initSubSeq1 + sizeSubSeq1]] + 
+                      matrizAdj[sol[initSubSeq2 - 1]][sol[initSubSeq2]] + matrizAdj[sol[initSubSeq2 + sizeSubSeq2 - 1]][sol[initSubSeq2 + sizeSubSeq2]]);
 
-      custoFinal =(matrizAdj[solucao[pos1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos1 + bloco1]] + 
-                  matrizAdj[solucao[pos2 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2 + bloco2]]) - 
-                  (matrizAdj[solucao[pos1 - 1]][solucao[pos1 + bloco1]] + matrizAdj[solucao[pos2 - 1]][solucao[pos2 + bloco2]]);
+      finalCost =(matrizAdj[sol[initSubSeq1 - 1]][sol[initSubSeq2]] + matrizAdj[sol[initSubSeq2 + sizeSubSeq2 - 1]][sol[initSubSeq1 + sizeSubSeq1]] + 
+                  matrizAdj[sol[initSubSeq2 - 1]][sol[initSubSeq1]] + matrizAdj[sol[initSubSeq1 + sizeSubSeq1 - 1]][sol[initSubSeq2 + sizeSubSeq2]]) - 
+                  (matrizAdj[sol[initSubSeq1 - 1]][sol[initSubSeq1 + sizeSubSeq1]] + matrizAdj[sol[initSubSeq2 - 1]][sol[initSubSeq2 + sizeSubSeq2]]);
 
-      deltaCusto = custoFinal + custoInicial;
+      deltaCost = finalCost + initialCost;
     }
 
-    solucao.erase(solucao.begin() + pos2, solucao.begin() + pos2 + (bloco2));
-    solucao.insert(solucao.begin() + pos2, aux1.begin(), aux1.begin() + aux1.size());
+    sol.erase(sol.begin() + initSubSeq2, sol.begin() + initSubSeq2 + (sizeSubSeq2));
+    sol.insert(sol.begin() + initSubSeq2, subSeq1.begin(), subSeq1.begin() + subSeq1.size());
 
-    solucao.erase(solucao.begin() + pos1 + (bloco1 - bloco2), solucao.begin() + pos1 + (bloco1 - bloco2) + (bloco1));
-    solucao.insert(solucao.begin() + pos1 + (bloco1 - bloco2), aux2.begin(), aux2.begin() + aux2.size());
+    sol.erase(sol.begin() + initSubSeq1 + (sizeSubSeq1 - sizeSubSeq2), sol.begin() + initSubSeq1 + (sizeSubSeq1 - sizeSubSeq2) + (sizeSubSeq1));
+    sol.insert(sol.begin() + initSubSeq1 + (sizeSubSeq1 - sizeSubSeq2), subSeq2.begin(), subSeq2.begin() + subSeq2.size());
 
   } else {
-    if(pos1 + bloco1 == pos2){
-      deltaCusto = (matrizAdj[solucao[pos1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2 + bloco2]]) -
-                  (matrizAdj[solucao[pos1 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos2 + bloco2]]);
+    if(initSubSeq1 + sizeSubSeq1 == initSubSeq2){
+      deltaCost = (matrizAdj[sol[initSubSeq1 - 1]][sol[initSubSeq2]] + matrizAdj[sol[initSubSeq2 + sizeSubSeq2 - 1]][sol[initSubSeq1]] + matrizAdj[sol[initSubSeq1 + sizeSubSeq1 - 1]][sol[initSubSeq2 + sizeSubSeq2]]) -
+                  (matrizAdj[sol[initSubSeq1 - 1]][sol[initSubSeq1]] + matrizAdj[sol[initSubSeq1 + sizeSubSeq1 - 1]][sol[initSubSeq2]] + matrizAdj[sol[initSubSeq2 + sizeSubSeq2 - 1]][sol[initSubSeq2 + sizeSubSeq2]]);
     
     } else {
-      custoInicial = (matrizAdj[solucao[pos1 - 1]][solucao[pos1 + bloco1]] + matrizAdj[solucao[pos2 - 1]][solucao[pos2 + bloco2]]) - 
-                    (matrizAdj[solucao[pos1 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos1 + bloco1]] + 
-                      matrizAdj[solucao[pos2 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos2 + bloco2]]);
+      initialCost = (matrizAdj[sol[initSubSeq1 - 1]][sol[initSubSeq1 + sizeSubSeq1]] + matrizAdj[sol[initSubSeq2 - 1]][sol[initSubSeq2 + sizeSubSeq2]]) - 
+                    (matrizAdj[sol[initSubSeq1 - 1]][sol[initSubSeq1]] + matrizAdj[sol[initSubSeq1 + sizeSubSeq1 - 1]][sol[initSubSeq1 + sizeSubSeq1]] + 
+                      matrizAdj[sol[initSubSeq2 - 1]][sol[initSubSeq2]] + matrizAdj[sol[initSubSeq2 + sizeSubSeq2 - 1]][sol[initSubSeq2 + sizeSubSeq2]]);
 
-      custoFinal =(matrizAdj[solucao[pos1 - 1]][solucao[pos2]] + matrizAdj[solucao[pos2 + bloco2 - 1]][solucao[pos1 + bloco1]] + 
-                  matrizAdj[solucao[pos2 - 1]][solucao[pos1]] + matrizAdj[solucao[pos1 + bloco1 - 1]][solucao[pos2 + bloco2]]) - 
-                  (matrizAdj[solucao[pos1 - 1]][solucao[pos1 + bloco1]] + matrizAdj[solucao[pos2 - 1]][solucao[pos2 + bloco2]]);
+      finalCost =(matrizAdj[sol[initSubSeq1 - 1]][sol[initSubSeq2]] + matrizAdj[sol[initSubSeq2 + sizeSubSeq2 - 1]][sol[initSubSeq1 + sizeSubSeq1]] + 
+                  matrizAdj[sol[initSubSeq2 - 1]][sol[initSubSeq1]] + matrizAdj[sol[initSubSeq1 + sizeSubSeq1 - 1]][sol[initSubSeq2 + sizeSubSeq2]]) - 
+                  (matrizAdj[sol[initSubSeq1 - 1]][sol[initSubSeq1 + sizeSubSeq1]] + matrizAdj[sol[initSubSeq2 - 1]][sol[initSubSeq2 + sizeSubSeq2]]);
 
-      deltaCusto = custoFinal + custoInicial;
+      deltaCost = finalCost + initialCost;
     }
 
-    solucao.erase(solucao.begin() + pos1, solucao.begin() + pos1 + (bloco1));
-    solucao.insert(solucao.begin() + pos1, aux2.begin(), aux2.begin() + aux2.size());
+    sol.erase(sol.begin() + initSubSeq1, sol.begin() + initSubSeq1 + (sizeSubSeq1));
+    sol.insert(sol.begin() + initSubSeq1, subSeq2.begin(), subSeq2.begin() + subSeq2.size());
 
-    solucao.erase(solucao.begin() + pos2 + (bloco2 - bloco1), solucao.begin() + pos2 + (bloco2 - bloco1) + (bloco2));
-    solucao.insert(solucao.begin() + pos2 + (bloco2 - bloco1), aux1.begin(), aux1.begin() + aux1.size());
+    sol.erase(sol.begin() + initSubSeq2 + (sizeSubSeq2 - sizeSubSeq1), sol.begin() + initSubSeq2 + (sizeSubSeq2 - sizeSubSeq1) + (sizeSubSeq2));
+    sol.insert(sol.begin() + initSubSeq2 + (sizeSubSeq2 - sizeSubSeq1), subSeq1.begin(), subSeq1.begin() + subSeq1.size());
   }
 
-  return custoDaSolucaoAnterior + deltaCusto;
+  return cost + deltaCost;
 }
 
 // Untils
