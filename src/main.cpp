@@ -35,12 +35,16 @@ typedef struct{
 // Pega da instâncias
 double ** matrizAdj; // matriz de adjacencia
 int dimension; // quantidade total de vertices
+vector< vector< vector< vector< int > > > > reinsertionMatrix;
 
 // Untils
 void printData(); // Mostra matriz de adjacencia
 void printSolucao(vector<int> &solucao, int tamanhoArray); // Mostra a solução inicial gerada pel algorítimo escolhido
 void custoSolucao(int *custoTotal, vector<int> solucao, int tamanhoArray); // Mostra o custo da solução gerada
 bool compareByCost(const tInsercao &data1, const tInsercao &data2);
+
+//Preproces
+void preProcessReinsertion();
 
 //GILS-RVND
 int construtivo(vector<int> &sol, int depot, float alpha);
@@ -60,6 +64,8 @@ int main(int argc, char** argv){
   readData(argc, argv, &dimension, &matrizAdj);
   //printData();
 
+  preProcessReinsertion();
+
   vector<int> sol;
   int costSol;
   int maxIls = (dimension > 150) ? dimension/2 : dimension; 
@@ -68,6 +74,21 @@ int main(int argc, char** argv){
   cout << "Custo: " << costSol << endl;
 
   return 0;
+}
+
+//Preproces
+void preProcessReinsertion(){
+  vector< vector< vector< vector< int > > > > reinsertionMatrix;
+  vector< vector< vector< int > > > de;
+  for(int i = 1; i < 48; i++){
+    for(int j = 1; j < 48; j++){
+      for(int k = 1; k < 48; k++){
+        for(int l = 1; l < 48; l++){
+          reinsertionMatrix[i][j][k][l] = (matrizAdj[i][k] + matrizAdj[l][j]) - (matrizAdj[i][j]);
+        }
+      }
+    }
+  }
 }
 
 //GILS-RVND
@@ -259,8 +280,6 @@ int gilsRvnd(vector<int> &bestBestSol, int Imax, int Iils){
         bestCost = currentCost;
         bestSol = currentSol;
 
-        qtdMelhorasDoubleBridge++;
-
         //Zera o iterador
         interILS = 0;
       }
@@ -299,7 +318,8 @@ int reinsertion(vector<int> &sol, int subseqSize, int cost){
     retreatCost = matrizAdj[sol[i-1]][sol[i+subseqSize]] - (matrizAdj[sol[i-1]][sol[i]] + matrizAdj[sol[i+subseqSize-1]][sol[i+subseqSize]]);
 
     for(size_t y = 0; y < i - 1; y++){
-      insertionCost = (matrizAdj[sol[y]][sol[i]] + matrizAdj[sol[i+subseqSize-1]][sol[y+1]]) - matrizAdj[sol[y]][sol[y+1]];
+      //insertionCost = (matrizAdj[sol[y]][sol[i]] + matrizAdj[sol[i+subseqSize-1]][sol[y+1]]) - matrizAdj[sol[y]][sol[y+1]];
+      insertionCost = reinsertionMatrix[y][y+1][i][i+subseqSize-1];
 
       if((retreatCost + insertionCost) < deltaCost){
         flag = true;
