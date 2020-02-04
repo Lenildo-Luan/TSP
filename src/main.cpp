@@ -64,7 +64,9 @@ int main(int argc, char** argv){
   readData(argc, argv, &dimension, &matrizAdj);
   //printData();
 
-  preProcessReinsertion();
+  #ifdef PREPROCESS
+    preProcessReinsertion();
+  #endif
 
   vector<int> sol;
   int costSol;
@@ -72,19 +74,25 @@ int main(int argc, char** argv){
 
   costSol = gilsRvnd(sol, 50, maxIls);
   cout << "Custo: " << costSol << endl;
+  printSolucao(sol, dimension);
 
   return 0;
 }
 
 //Preproces
 void preProcessReinsertion(){
-  vector< vector< vector< vector< int > > > > reinsertionMatrix;
-  vector< vector< vector< int > > > de;
-  for(int i = 1; i < 48; i++){
-    for(int j = 1; j < 48; j++){
-      for(int k = 1; k < 48; k++){
-        for(int l = 1; l < 48; l++){
-          reinsertionMatrix[i][j][k][l] = (matrizAdj[i][k] + matrizAdj[l][j]) - (matrizAdj[i][j]);
+  vector< vector< vector< int > > > rd3Vector;
+  vector< vector< int > > rd2Vector;
+  vector< int > rd1Vector;
+
+  for(int i = 0; i <= dimension; i++){
+    reinsertionMatrix.push_back(rd3Vector);
+    for(int j = 0; j <= dimension; j++){
+      reinsertionMatrix[i].push_back(rd2Vector);
+      for(int k = 0; k <= dimension; k++){
+        reinsertionMatrix[i][j].push_back(rd1Vector);
+        for(int l = 0; l <= dimension; l++){
+          reinsertionMatrix[i][j][k].push_back((matrizAdj[i][k] + matrizAdj[l][j]) - (matrizAdj[i][j]));
         }
       }
     }
@@ -318,8 +326,12 @@ int reinsertion(vector<int> &sol, int subseqSize, int cost){
     retreatCost = matrizAdj[sol[i-1]][sol[i+subseqSize]] - (matrizAdj[sol[i-1]][sol[i]] + matrizAdj[sol[i+subseqSize-1]][sol[i+subseqSize]]);
 
     for(size_t y = 0; y < i - 1; y++){
-      //insertionCost = (matrizAdj[sol[y]][sol[i]] + matrizAdj[sol[i+subseqSize-1]][sol[y+1]]) - matrizAdj[sol[y]][sol[y+1]];
-      insertionCost = reinsertionMatrix[y][y+1][i][i+subseqSize-1];
+      #ifdef PREPROCESS
+        insertionCost = reinsertionMatrix[sol[y]][sol[y+1]][sol[i]][sol[i+subseqSize-1]];
+      #endif
+      #ifndef PREPROCESS
+        insertionCost = (matrizAdj[sol[y]][sol[i]] + matrizAdj[sol[i+subseqSize-1]][sol[y+1]]) - matrizAdj[sol[y]][sol[y+1]];
+      #endif
 
       if((retreatCost + insertionCost) < deltaCost){
         flag = true;
